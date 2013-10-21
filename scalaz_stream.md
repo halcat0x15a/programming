@@ -54,7 +54,7 @@ case object End extends Exception
 
 これはストリームの終端を表す.
 
-# Env
+## Env
 
 ```scala
 case class Env[-I,-I2]() {
@@ -83,7 +83,7 @@ type Tee[-I, -I2, +O] = Process[Env[I, I2]#T, O]
 type Wye[-I, -I2, +O] = Process[Env[I, I2]#Y, O]
 ```
 
-# Process0
+## Process0
 
 出力のみを行う.
 
@@ -93,12 +93,42 @@ val helloworld: Process0[String] = emit("hello") ++ emit("world")
 helloworld.toList assert_=== List("hello", "world")
 ```
 
-# Process1
+## Process1
 
 入力を*一つ*取り,出力を返す.
 
 ```scala
-val inc: Process1[Int, Int] = receive1((n: Int) => emit(n + 1))
+val inc1: Process1[Int, Int] = receive1((n: Int) => emit(n + 1))
 
-inc(0 to 100).toList assert_=== List(1)
+inc1(0 to 2).toList assert_=== List(1)
+
+val inc: Process1[Int, Int] = inc1.repeat
+
+inc(0 to 2).toList assert_=== List(1, 2, 3)
+```
+
+# pipe
+
+Process同士はpipeによって連結することが可能である.
+
+```scala
+lazy val odd: Process0[Int] = emit(0) ++ odd.map(_ + 2)
+
+odd.pipe(inc).take(3).toList assert_=== List(1, 3, 5)
+```
+
+# Monad
+
+ProcessはMonadPlusである.
+
+emitはList Monad,awaitはReader Monadを考えるとよい.
+
+```scala
+val toUpper: Process1[String, Char] = for {
+  str <- await1[String]
+  char <- emitAll(str)
+  if char.isLetter
+} yield char.toUpper
+
+emit("foo bar").pipe(toUpper).toList assert_=== List('F', 'O', 'O', 'B', 'A', 'R')
 ```
