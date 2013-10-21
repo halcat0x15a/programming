@@ -1,8 +1,8 @@
 # scalaz-stream
 
-# Process[+F[_], +O]
+# Process
 
-Fから生成されるOのストリームを表現する
+ストリームを表現する
 
 Processは以下のコンストラクタを持つ
 
@@ -53,3 +53,52 @@ case object End extends Exception
 ```
 
 これはストリームの終端を表す.
+
+# Env
+
+```scala
+case class Env[-I,-I2]() {
+  sealed trait Y[-X]
+  sealed trait T[-X] extends Y[X]
+  sealed trait Is[-X] extends T[X]
+  case object Left extends Is[I]
+  case object Right extends T[I2]
+  case object Both extends Y[These[I,I2]]
+}
+```
+
+ProcessはEnvにより入力を選択することが可能である.
+
+これらはただの制約に過ぎない.
+
+Envを利用して,いくつかのトランスデューサが定義される.
+
+```scala
+type Process0[+O] = Process[Env[Any, Any]#Is, O]
+
+type Process1[-I, +O] = Process[Env[I, Any]#Is, O]
+
+type Tee[-I, -I2, +O] = Process[Env[I, I2]#T, O]
+
+type Wye[-I, -I2, +O] = Process[Env[I, I2]#Y, O]
+```
+
+# Process0
+
+出力のみを行う.
+
+```scala
+val helloworld: Process0[String] = emit("hello") ++ emit("world")
+
+helloworld.toList assert_=== List("hello", "world")
+```
+
+# Process1
+
+入力を*一つ*取り,出力を返す.
+
+```scala
+val inc: Process1[Int, Int] = receive1((n: Int) => emit(n + 1))
+
+inc(0 to 100).toList assert_=== List(1)
+```
