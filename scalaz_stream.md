@@ -1,5 +1,7 @@
 # scalaz-stream
 
+基本的なデータ型と簡単な使い方を紹介する.
+
 # Process
 
 ストリームを表現する
@@ -107,6 +109,14 @@ val inc: Process1[Int, Int] = inc1.repeat
 inc(0 to 2).toList assert_=== List(1, 2, 3)
 ```
 
+基本的な関数は```scalaz.stream.process1```に定義されている.
+
+```scala
+def mkString[A: Show]: Process1[A, String] = process1.foldMap(_.shows)
+
+mkString[Int].apply(1 to 3).toList assert_=== List("123")
+```
+
 # pipe
 
 Process同士はpipeによって連結することが可能である.
@@ -114,7 +124,9 @@ Process同士はpipeによって連結することが可能である.
 ```scala
 lazy val odd: Process0[Int] = emit(0) ++ odd.map(_ + 2)
 
-odd.pipe(inc).take(3).toList assert_=== List(1, 3, 5)
+odd.take(3).pipe(inc).toList assert_=== List(1, 3, 5)
+
+odd.take(3).pipe(mkString).toList assert_=== List("024")
 ```
 
 # Monad
@@ -131,4 +143,42 @@ val toUpper: Process1[String, Char] = for {
 } yield char.toUpper
 
 emit("foo bar").pipe(toUpper).toList assert_=== List('F', 'O', 'O', 'B', 'A', 'R')
+```
+
+# io
+
+I/Oに関するProcessはscalaz.stream.ioに定義される.
+
+Taskは例外を扱うFutureで,scalaz-concurrentに定義される.
+
+```scala
+import scalaz.concurrent.Task
+
+val src: Process[Task, String] = io.linesR("build.sbt")
+
+val print: Task[Unit] = src.to(io.stdOutLines).run
+
+print.run
+
+val dst: Process[Task, Array[Byte] => Task[Unit]] = io.fileChunkW("test.txt")
+
+val copy: Task[Unit] = src.pipe(process1.utf8Encode).to(dst).run
+
+copy.run
+```
+
+## chunkR
+
+chunkのサイズを指定する必要がある.
+
+```scala
+val scala = new java.net.URL("http://scala-lang.org/")
+
+val print: Task[Unit] =
+  constant(1024)
+    .through(io.chunkR(scala.openStream))
+    .to(io.fileChunkW("scala.html"))
+    .run
+
+print.run
 ```
