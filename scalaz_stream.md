@@ -90,6 +90,10 @@ type Wye[-I, -I2, +O] = Process[Env[I, I2]#Y, O]
 出力のみを行う.
 
 ```scala
+val hello: Process0[Char] = emitAll("hello")
+
+hello.toList assert_=== List('h', 'e', 'l', 'l', 'o')
+
 val helloworld: Process0[String] = emit("hello") ++ emit("world")
 
 helloworld.toList assert_=== List("hello", "world")
@@ -102,11 +106,11 @@ helloworld.toList assert_=== List("hello", "world")
 ```scala
 val inc1: Process1[Int, Int] = receive1((n: Int) => emit(n + 1))
 
-inc1(0 to 2).toList assert_=== List(1)
+inc1(1 to 3).toList assert_=== List(2)
 
 val inc: Process1[Int, Int] = inc1.repeat
 
-inc(0 to 2).toList assert_=== List(1, 2, 3)
+inc(1 to 3).toList assert_=== List(2, 3, 4)
 ```
 
 基本的な関数は```scalaz.stream.process1```に定義されている.
@@ -149,36 +153,14 @@ emit("foo bar").pipe(toUpper).toList assert_=== List('F', 'O', 'O', 'B', 'A', 'R
 
 I/Oに関するProcessはscalaz.stream.ioに定義される.
 
-Taskは例外を扱うFutureで,scalaz-concurrentに定義される.
-
-```scala
-import scalaz.concurrent.Task
-
-val src: Process[Task, String] = io.linesR("build.sbt")
-
-val print: Task[Unit] = src.to(io.stdOutLines).run
-
-print.run
-
-val dst: Process[Task, Array[Byte] => Task[Unit]] = io.fileChunkW("test.txt")
-
-val copy: Task[Unit] = src.pipe(process1.utf8Encode).to(dst).run
-
-copy.run
-```
-
-## chunkR
-
-chunkのサイズを指定する必要がある.
-
 ```scala
 val scala = new java.net.URL("http://scala-lang.org/")
 
-val print: Task[Unit] =
+val write: Task[Unit] =
   constant(1024)
     .through(io.chunkR(scala.openStream))
     .to(io.fileChunkW("scala.html"))
     .run
 
-print.run
+write.run
 ```
