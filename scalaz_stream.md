@@ -90,21 +90,29 @@ type Wye[-I, -I2, +O] = Process[Env[I, I2]#Y, O]
 出力のみを行う.
 
 ```scala
-val hello: Process0[Char] = emitAll("hello")
+import scalaz.std.AllInstances._
+import scalaz.syntax.equal._
+import scalaz.stream.{Process, Process0}
+
+val hello: Process0[Char] = Process.emitAll("hello")
 
 hello.toList assert_=== List('h', 'e', 'l', 'l', 'o')
 
-val helloworld: Process0[String] = emit("hello") ++ emit("world")
+lazy val numbers: Process0[Int] = Process.emit(0) ++ numbers.map(_ + 1)
 
-helloworld.toList assert_=== List("hello", "world")
+numbers.take(3).toList assert_=== List(0, 1, 2)
 ```
 
 ## Process1
 
-入力を*一つ*取り,出力を返す.
+入力を*一つ*読み取り,出力する.
 
 ```scala
-val inc1: Process1[Int, Int] = receive1((n: Int) => emit(n + 1))
+import scalaz.std.AllInstances._
+import scalaz.syntax.equal._
+import scalaz.stream.{Process, Process1}
+
+val inc1: Process1[Int, Int] = Process.receive1((n: Int) => Process.emit(n + 1))
 
 inc1(1 to 3).toList assert_=== List(2)
 
@@ -113,9 +121,14 @@ val inc: Process1[Int, Int] = inc1.repeat
 inc(1 to 3).toList assert_=== List(2, 3, 4)
 ```
 
-基本的な関数は```scalaz.stream.process1```に定義されている.
+基本的な関数はscalaz.stream.process1に定義される.
 
 ```scala
+import scalaz.Show
+import scalaz.std.AllInstances._
+import scalaz.syntax.equal._, scalaz.syntax.show._
+import scalaz.stream.{process1, Process, Process1}
+
 def mkString[A: Show]: Process1[A, String] = process1.foldMap(_.shows)
 
 mkString[Int].apply(1 to 3).toList assert_=== List("123")
@@ -126,11 +139,9 @@ mkString[Int].apply(1 to 3).toList assert_=== List("123")
 Process同士はpipeによって連結することが可能である.
 
 ```scala
-lazy val odd: Process0[Int] = emit(0) ++ odd.map(_ + 2)
+numbers.pipe(inc).take(3).toList assert_=== List(1, 2, 3)
 
-odd.take(3).pipe(inc).toList assert_=== List(1, 3, 5)
-
-odd.take(3).pipe(mkString).toList assert_=== List("024")
+numbers.take(3).pipe(mkString).toList assert_=== List("012")
 ```
 
 # Monad
@@ -140,27 +151,33 @@ ProcessはMonadPlusである.
 emitはList Monad,awaitはReader Monadを考えるとよい.
 
 ```scala
+import scalaz.std.AllInstances._
+import scalaz.syntax.equal._
+import scalaz.stream.{Process, Process1}
+
 val toUpper: Process1[String, Char] = for {
-  str <- await1[String]
-  char <- emitAll(str)
+  str <- Process.await1[String]
+  char <- Process.emitAll(str)
   if char.isLetter
 } yield char.toUpper
 
-emit("foo bar").pipe(toUpper).toList assert_=== List('F', 'O', 'O', 'B', 'A', 'R')
+Process.emit("foo bar").pipe(toUpper).toList assert_=== List('F', 'O', 'O', 'B', 'A', 'R')
 ```
 
 # io
 
-I/Oに関するProcessはscalaz.stream.ioに定義される.
+I/Oに関する関数はscalaz.stream.ioに定義される.
 
 ```scala
-val scala = new java.net.URL("http://scala-lang.org/")
+import java.net.URL
+import scalaz.concurrent.Task
+import scalaz.stream.{io, Process}
 
-val write: Task[Unit] =
-  constant(1024)
-    .through(io.chunkR(scala.openStream))
+val download: Task[Unit] =
+  Process.constant(1024)
+    .through(io.chunkR(new URL("http://scala-lang.org/").openStream))
     .to(io.fileChunkW("scala.html"))
     .run
 
-write.run
+download.run
 ```
