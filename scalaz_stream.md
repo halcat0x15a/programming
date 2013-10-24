@@ -23,11 +23,11 @@ case class Await[F[_], A, +O](
     extends Process[F, O]
 ```
 
-reqを評価し,入力を得る.
+`req`を評価し,入力を得る.
 
-成功した場合はrecvがその値を処理する.
+成功した場合は`recv`がその値を処理する.
 
-入力が枯渇している場合はfallbackが,例外が発生した場合はcleanupが評価される.
+入力が枯渇している場合は`fallback`が,例外が発生した場合は`cleanup`が評価される.
 
 ## Emit
 
@@ -38,7 +38,7 @@ case class Emit[F[_], O](
     extends Process[F, O]
 ```
 
-headは出力列,tailは継続を表現する.
+`head`は出力列,`tail`は継続を表現する.
 
 ## Halt
 
@@ -46,9 +46,9 @@ headは出力列,tailは継続を表現する.
 case class Halt(cause: Throwable) extends Process[Nothing, Nothing]
 ```
 
-causeにより,ストリームの駆動を停止する.
+`cause`により,ストリームの駆動を停止する.
 
-特別な例外として,Endが存在する
+特別な例外として,`End`が存在する
 
 ```scala
 case object End extends Exception
@@ -69,11 +69,11 @@ case class Env[-I,-I2]() {
 }
 ```
 
-ProcessはEnvにより入力を選択することが可能である.
+`Process`は`Env`により入力を選択することが可能である.
 
 これらはただの制約に過ぎない.
 
-Envを利用して,いくつかのトランスデューサが定義される.
+`Env`を利用して,いくつかのトランスデューサが定義される.
 
 ```scala
 type Process0[+O] = Process[Env[Any, Any]#Is, O]
@@ -121,7 +121,7 @@ val inc: Process1[Int, Int] = inc1.repeat
 inc(1 to 3).toList assert_=== List(2, 3, 4)
 ```
 
-基本的な関数はscalaz.stream.process1に定義される.
+基本的な関数は`scalaz.stream.process1`に定義される.
 
 ```scala
 import scalaz.Show
@@ -136,7 +136,7 @@ mkString[Int].apply(1 to 3).toList assert_=== List("123")
 
 # pipe
 
-Process同士はpipeによって連結することが可能である.
+`Process`同士は`pipe`によって連結することが可能である.
 
 ```scala
 numbers.pipe(inc).take(3).toList assert_=== List(1, 2, 3)
@@ -146,9 +146,9 @@ numbers.take(3).pipe(mkString).toList assert_=== List("012")
 
 # Monad
 
-ProcessはMonadPlusである.
+`Process`はMonadPlusである.
 
-emitはList Monad,awaitはReader Monadを考えるとよい.
+`emit`はList Monad,`await`はReader Monadを考えるとよい.
 
 ```scala
 import scalaz.std.AllInstances._
@@ -166,7 +166,7 @@ Process.emit("foo bar").pipe(toUpper).toList assert_=== List('F', 'O', 'O', 'B',
 
 # io
 
-I/Oに関する関数はscalaz.stream.ioに定義される.
+I/Oに関する関数は`scalaz.stream.io`に定義される.
 
 ```scala
 import java.net.URL
