@@ -4,11 +4,11 @@ Clojureにおける非同期プログラミングの紹介
 
 # channel
 
-core.asyncではチャネルを用いて値をやりとりする.
+core.asyncではchannelを用いて値をやりとりする.
 
-チャネルの生成には`chan`を使う.
+channelの生成には`chan`を使う.
 
-チャネルに値を書き込むには`>!!`,読み込むには`<!!`を使う.
+channelに値を書き込むには`>!!`,読み込むには`<!!`を使う.
 
 これらの関数は同期的に実行され,操作が完了するまでスレッドはブロックされる.
 
@@ -34,7 +34,34 @@ core.asyncが提供する非同期実行の仕組み.
 
 (let [c (chan)]
   (go-loop [n 0] (>! c n) (recur (inc n)))
-  (go (<! c)
-      (<! c)
+  (go (assert (= (<! c) 0))
+      (assert (= (<! c) 1))
       (assert (= (<! c) 2))))
+```
+
+# example
+
+channelのtarget,sourceに対して`map`や`filter`を適用する.
+
+```clojure
+(require '[clojure.core.async :refer (chan <! >! filter> map< go go-loop)])
+
+(let [c (->> (chan)
+             (filter> odd?)
+             (map< #(* % %)))]
+  (go-loop [n 0] (>! c n) (recur (inc n)))
+  (go (assert (= (<! c) 1))
+      (assert (= (<! c) 9))
+      (assert (= (<! c) 25))))
+```
+
+channel同士をpipeでつなぐ.
+
+```clojure
+(require '[clojure.core.async :refer (chan <! >! pipe go)])
+
+(let [in (chan) out (chan)]
+  (go (dotimes [n 10] (>! in n)))
+  (go (while true (prn (<! out))))
+  (pipe in out))
 ```
