@@ -39,7 +39,35 @@ core.asyncが提供する非同期実行の仕組み.
       (assert (= (<! c) 2))))
 ```
 
-# example
+# alt!
+
+`alts!`は複数のchannelの内,書き込みが行われたchannelと値のペアを返す.
+
+```clojure
+(require '[clojure.core.async :refer (chan >! <!! >!! alts! go)])
+
+(let [c1 (chan)
+      c2 (chan)
+      out (chan)
+      from (chan)]
+  (go (while true
+        (let [[v c] (alts! [c1 c2])]
+          (>! out v)
+          (>! from c))))
+  (>!! c1 0)
+  (assert (= (<!! out) 0))
+  (assert (= (<!! from) c1))
+  (>!! c2 1)
+  (assert (= (<!! out) 1))
+  (assert (= (<!! from) c2)))
+```
+
+`alt!`は複数のchannelの操作から一つ選択する.
+
+```clojure
+```
+
+# ops
 
 channelのtarget,sourceに対して`map`や`filter`を適用する.
 
