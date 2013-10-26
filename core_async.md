@@ -1,7 +1,5 @@
 # core.async
 
-Clojureにおける非同期プログラミングの紹介
-
 # channel
 
 core.asyncではchannelを用いて値をやりとりする.
