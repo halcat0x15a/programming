@@ -15,6 +15,20 @@ trait Catchable[F[_]] {
 
 `attempt`は評価し,例外を捕らえる.
 
+```scala
+import scalaz.{-\/, Show, Equal}
+import scalaz.std.AllInstances._
+import scalaz.syntax.equal._
+import scalaz.concurrent.Task
+
+implicit object ThrowableInstance extends Show[Throwable] with Equal[Throwable] {
+  def equal(e1: Throwable, e2: Throwable) = e1.toString == e2.toString
+  override def shows(e: Throwable) = e.toString
+}
+
+Task("hoge".toInt).attempt.run assert_=== -\/(new NumberFormatException("""For input string: "hoge""""))
+```
+
 # Nondeterminism
 
 あるコンテキストで複数の値から非決定的な選択を行う.
