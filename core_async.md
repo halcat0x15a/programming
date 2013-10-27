@@ -46,23 +46,32 @@ core.asyncが提供する非同期実行の仕組み.
 
 (let [c1 (chan)
       c2 (chan)
-      out (chan)
-      from (chan)]
-  (go (while true
-        (let [[v c] (alts! [c1 c2])]
-          (>! out v)
-          (>! from c))))
+      r (chan)]
+  (go (while true (>! r (alts! [c1 c2]))))
   (>!! c1 0)
-  (assert (= (<!! out) 0))
-  (assert (= (<!! from) c1))
+  (assert (= (<!! r) [0 c1]))
   (>!! c2 1)
-  (assert (= (<!! out) 1))
-  (assert (= (<!! from) c2)))
+  (assert (= (<!! r) [1 c2])))
 ```
 
 `alt!`は複数のchannelの操作から一つ選択する.
 
 ```clojure
+(require '[clojure.core.async :refer (chan >! <!! >!! alt! go)])
+
+(let [c1 (chan)
+      c2 (chan)
+      c3 (chan)
+      r (chan)]
+  (go (while true
+        (>! r (alt! [c1 c2] ([v c] [v c])
+                    c3 ([v] v)))))
+  (>!! c1 0)
+  (assert (= (<!! r) [0 c1]))
+  (>!! c2 1)
+  (assert (= (<!! r) [1 c2]))
+  (>!! c3 2)
+  (assert (= (<!! r) 2)))
 ```
 
 # ops
