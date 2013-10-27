@@ -41,6 +41,21 @@ trait Nondeterminism[F[_]] {
 
 `Nondeterminism`は`Future`や`Task`など,非同期に実行出来るものに対して定義され,`chooseAny`は最初に返った値を選択する.
 
+```scala
+import scalaz.Nondeterminism
+import scalaz.std.anyVal._
+import scalaz.syntax.equal._
+import scalaz.concurrent.Task
+
+val sleep1s = Task { Thread.sleep(1000); 1 }
+
+val sleep3s = Task { Thread.sleep(3000); 3 }
+
+val sleep5s = Task { Thread.sleep(5000); 5 }
+
+Nondeterminism[Task].chooseAny(sleep3s, Seq(sleep1s, sleep5s)).run._1 assert_=== 1
+```
+
 # Task
 
 例外を扱う`Future`.
