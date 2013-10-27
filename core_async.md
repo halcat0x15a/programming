@@ -21,6 +21,14 @@ channelに値を書き込むには`>!!`,読み込むには`<!!`を使う.
   (assert (= @r "hello")))
 ```
 
+`timeout`は指定した時間の後閉じられるchannelを返す.
+
+```clojure
+(require '[clojure.core.async :refer (timeout <!!)])
+
+(assert (= (<!! (timeout 1000)) nil))
+```
+
 # go
 
 core.asyncが提供する非同期実行の仕組み.
@@ -48,10 +56,10 @@ core.asyncが提供する非同期実行の仕組み.
       c2 (chan)
       r (chan)]
   (go (while true (>! r (alts! [c1 c2]))))
-  (>!! c1 0)
-  (assert (= (<!! r) [0 c1]))
-  (>!! c2 1)
-  (assert (= (<!! r) [1 c2])))
+  (>!! c1 "foo")
+  (assert (= (<!! r) ["foo" c1]))
+  (>!! c2 "bar")
+  (assert (= (<!! r) ["bar" c2])))
 ```
 
 `alt!`は複数のchannelの操作から一つ選択する.
@@ -66,12 +74,24 @@ core.asyncが提供する非同期実行の仕組み.
   (go (while true
         (>! r (alt! [c1 c2] ([v c] [v c])
                     c3 ([v] v)))))
-  (>!! c1 0)
-  (assert (= (<!! r) [0 c1]))
-  (>!! c2 1)
-  (assert (= (<!! r) [1 c2]))
-  (>!! c3 2)
-  (assert (= (<!! r) 2)))
+  (>!! c1 "foo")
+  (assert (= (<!! r) ["foo" c1]))
+  (>!! c2 "bar")
+  (assert (= (<!! r) ["bar" c2]))
+  (>!! c3 "baz")
+  (assert (= (<!! r) "baz")))
+```
+
+これらの関数は`timeout`と組み合わせると有用である.
+
+```clojure
+(require '[clojure.java.io :refer (as-url)])
+(require '[clojure.core.async :refer (chan timeout >! >!! alt! go)])
+
+(let [c (chan)]
+  (go (alt! c ([v] (spit "clojuredocs.html" v))
+            (timeout 10000) ([] (prn "timeout"))))
+  (go (>! c (slurp (as-url "http://clojuredocs.org")))))
 ```
 
 # ops
