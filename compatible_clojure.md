@@ -14,7 +14,29 @@ ClojureとClojureScriptの両方で動くコードの書き方
               :crossovers [example.core]})
 ```
 
-これは,指定したnamespaceをClojureScriptのコンパイル時にまるごとコピーする仕組みである.
+これは指定したnamespaceをClojureScriptのコンパイル時にまるごとコピーする仕組みである.
+
+これにより,ClojureとClojureScriptで共通するコードを記述することが出来る.
+
+以下はディレクトリ構成例である.
+
+```
+.
+├── src
+│   └── example
+│       ├── core
+│       │   ├── foo.clj
+│       ├── core.clj
+│       ├── jvm
+│       │   ├── bar.clj
+│       └── jvm.clj
+├── src-cljs
+│   └── example
+│       ├── web
+│       │   ├── baz.cljs
+│       └── web.cljs
+└── project.clj
+```
 
 # CLJSBUILD-REMOVE
 
@@ -61,7 +83,7 @@ lein-cljsbuildによるプリプロセッサがいくつか存在する.
 
 clojure.langに定義されるクラスは大抵の場合cljs.coreに定義される.
 
-また,ClojureScriptでは,java.lang.Stringとjava.lang.Objectを拡張したいときにjs/Stringとjs/Objectを拡張するのではなく,stringとobjectを拡張する.
+また,ClojureScriptでは,java.lang.Stringとjava.lang.Objectを拡張したいときにjs/Stringとjs/Objectを拡張するのではなく,stringとobjectを使う.
 
 ```clojure
 (extend-protocol Foo
