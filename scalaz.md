@@ -1,5 +1,49 @@
 # Scalaz
 
+# Apply, Applicative
+
+コンテキスト内の関数をコンテキスト内の値に適用する.
+
+```scala
+trait Applicative[F[_]] extends Apply[F] {
+  def ap[A, B](fa: => F[A])(f: => F[(A) => B]): F[B]
+  def point[A](a: => A): F[A]
+}
+```
+
+関数の適用にはいくつかの書き方がある.
+
+```scala
+import scalaz.{Apply, Semigroup}
+import scalaz.std.anyVal._
+import scalaz.std.option._
+import scalaz.syntax.equal._
+import scalaz.syntax.apply._
+import scalaz.syntax.semigroup._
+
+def double[F[_], A](a: F[A])(implicit F: Apply[F], A: Semigroup[A]) = F.apply2(a, a)(_ |+| _)
+
+def double[F[_]: Apply, A: Semigroup](a: F[A]) = (a |@| a)(_ |+| _)
+
+def double[F[_]: Apply, A: Semigroup](a: F[A]) = ^(a, a)(_ |+| _)
+
+double(some(1)) assert_=== some(2)
+
+double(none[Int]) assert_=== None
+```
+
+applyとApplicativeBuilderは12まで,^は7まで,と引数の個数に制限がある.
+
+カリー化されている場合は,任意の個数をとることができる.
+
+```scala
+import scalaz.Apply
+import scalaz.syntax.apply._
+import scalaz.syntax.id._
+
+def apply[F[_]: Apply, A, B, C, D, E](f: A => B => C => D => E)(a: F[A], b: F[B], c: F[C], d: F[D]) = f |> a.map |> b.<*> |> c.<*> |> d.<*>
+```
+
 # Catchable
 
 あるコンテキストで例外を扱う.
