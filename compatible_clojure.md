@@ -94,3 +94,38 @@ clojure.langに定義されるクラスは大抵の場合cljs.coreに定義さ�
   java.lang.Object
   (bar [this] qux))
 ```
+
+Classを取得する場合は`class`ではなく`type`を使う.
+
+```clojure
+ClojureScript:cljs.user> (class "")
+"Error evaluating:" (class "") :as "cljs.user.class$.call(null,\"\")"
+org.mozilla.javascript.EcmaError: TypeError: Cannot call method "call" of undefined (<cljs repl>#1)
+	at <cljs repl>:1 (anonymous)
+	at <cljs repl>:1
+
+nil
+ClojureScript:cljs.user> (type "")
+#<function String() { [native code for String.String, arity=1] }
+>
+```
+
+# Exception
+
+ClojureScriptではどんなオブジェクトでも`throw`できるが,ClojureはJavaと同様にThrowableのみを`throw`できる.
+
+`ex-info`を使うことにより,ClojureとClojureScriptで`throw`が可能になる.
+
+しかし,`ExceptionInfo`もClojureとClojureScriptではnamespaceが異なるため,`catch`するためには`CLJSBUILD-REMOVE`を用いらなければならない.
+
+```clojure
+(ns hoge
+  (:import
+;*CLJSBUILD-REMOVE*;cljs.core.ExceptionInfo #_
+   clojure.lang.ExceptionInfo))
+
+(try
+  (throw (ex-info "hoge" {}))
+  (catch ExceptionInfo e
+    (prn (ex-data e))))
+```
