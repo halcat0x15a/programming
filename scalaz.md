@@ -1,3 +1,8 @@
+---
+layout: default
+title: Scalaz
+---
+
 # Scalaz
 
 # Apply, Applicative

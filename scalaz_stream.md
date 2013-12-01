@@ -1,3 +1,8 @@
+---
+layout: default
+title: scalaz-stream
+---
+
 # scalaz-stream
 
 # Process

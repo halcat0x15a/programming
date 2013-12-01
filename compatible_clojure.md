@@ -1,3 +1,8 @@
+---
+layout: default
+title: Compatible Clojure
+---
+
 # Compatible Clojure
 
 ClojureとClojureScriptの両方で動くコードの書き方

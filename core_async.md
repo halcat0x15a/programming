@@ -1,3 +1,8 @@
+---
+layout: default
+title: core.async
+---
+
 # core.async
 
 core.asyncはその名の通り非同期プログラミングをサポートします.
