@@ -154,6 +154,159 @@ clojuredocsのAPIを使って,複数のライブラリから関数を検索し�
 
 標準入力からクエリを取得し,`go`の内側で非同期に通信します.
 
-`alt!`を使って通信結果が返った時とタイムアウトした時で場合分けしています.
+`alt!`を使って,通信結果が返った時とタイムアウトした時で場合分けをしています.
+
+以下は実行例です.
+
+```clojure
+search=> clojure.core/map
+search=> [{"id" 1494,
+  "name" "sorted-map",
+  "ns" "clojure.core",
+  "url" "http://clojuredocs.org/v/1494"}
+ {"id" 1577,
+  "name" "ns-unmap",
+  "ns" "clojure.core",
+  "url" "http://clojuredocs.org/v/1577"}
+ {"id" 1579,
+  "name" "zipmap",
+  "ns" "clojure.core",
+  "url" "http://clojuredocs.org/v/1579"}
+ {"id" 1734,
+  "name" "map",
+  "ns" "clojure.core",
+  "url" "http://clojuredocs.org/v/1734"}
+ {"id" 1756,
+  "name" "mapcat",
+  "ns" "clojure.core",
+  "url" "http://clojuredocs.org/v/1756"}
+ {"id" 1783,
+  "name" "sorted-map-by",
+  "ns" "clojure.core",
+  "url" "http://clojuredocs.org/v/1783"}
+ {"id" 1835,
+  "name" "map?",
+  "ns" "clojure.core",
+  "url" "http://clojuredocs.org/v/1835"}
+ {"id" 1871,
+  "name" "amap",
+  "ns" "clojure.core",
+  "url" "http://clojuredocs.org/v/1871"}
+ {"id" 1901,
+  "name" "struct-map",
+  "ns" "clojure.core",
+  "url" "http://clojuredocs.org/v/1901"}
+ {"id" 1904,
+  "name" "proxy-mappings",
+  "ns" "clojure.core",
+  "url" "http://clojuredocs.org/v/1904"}
+ {"id" 1952,
+  "name" "pmap",
+  "ns" "clojure.core",
+  "url" "http://clojuredocs.org/v/1952"}
+ {"id" 1974,
+  "name" "map-indexed",
+  "ns" "clojure.core",
+  "url" "http://clojuredocs.org/v/1974"}
+ {"id" 1997,
+  "name" "ns-map",
+  "ns" "clojure.core",
+  "url" "http://clojuredocs.org/v/1997"}
+ {"id" 2012,
+  "name" "array-map",
+  "ns" "clojure.core",
+  "url" "http://clojuredocs.org/v/2012"}
+ {"id" 2064,
+  "name" "hash-map",
+  "ns" "clojure.core",
+  "url" "http://clojuredocs.org/v/2064"}
+ {"id" 5350,
+  "name" "amap",
+  "ns" "clojure.core",
+  "url" "http://clojuredocs.org/v/5350"}
+ {"id" 5355,
+  "name" "array-map",
+  "ns" "clojure.core",
+  "url" "http://clojuredocs.org/v/5355"}
+ {"id" 5544,
+  "name" "hash-map",
+  "ns" "clojure.core",
+  "url" "http://clojuredocs.org/v/5544"}
+ {"id" 5600,
+  "name" "map",
+  "ns" "clojure.core",
+  "url" "http://clojuredocs.org/v/5600"}
+ {"id" 5601,
+  "name" "map-indexed",
+  "ns" "clojure.core",
+  "url" "http://clojuredocs.org/v/5601"}
+ {"id" 5602,
+  "name" "map?",
+  "ns" "clojure.core",
+  "url" "http://clojuredocs.org/v/5602"}
+ {"id" 5603,
+  "name" "mapcat",
+  "ns" "clojure.core",
+  "url" "http://clojuredocs.org/v/5603"}
+ {"id" 5635,
+  "name" "ns-map",
+  "ns" "clojure.core",
+  "url" "http://clojuredocs.org/v/5635"}
+ {"id" 5641,
+  "name" "ns-unmap",
+  "ns" "clojure.core",
+  "url" "http://clojuredocs.org/v/5641"}
+ {"id" 5659,
+  "name" "pmap",
+  "ns" "clojure.core",
+  "url" "http://clojuredocs.org/v/5659"}
+ {"id" 5683,
+  "name" "proxy-mappings",
+  "ns" "clojure.core",
+  "url" "http://clojuredocs.org/v/5683"}
+ {"id" 5763,
+  "name" "sorted-map",
+  "ns" "clojure.core",
+  "url" "http://clojuredocs.org/v/5763"}
+ {"id" 5764,
+  "name" "sorted-map-by",
+  "ns" "clojure.core",
+  "url" "http://clojuredocs.org/v/5764"}
+ {"id" 5775,
+  "name" "struct-map",
+  "ns" "clojure.core",
+  "url" "http://clojuredocs.org/v/5775"}
+ {"id" 5854,
+  "name" "zipmap",
+  "ns" "clojure.core",
+  "url" "http://clojuredocs.org/v/5854"}]
+search=> filter
+search=> [{"id" 1309,
+  "name" "stream-filter",
+  "ns" "clojure.contrib.stream-utils",
+  "url" "http://clojuredocs.org/v/1309"}
+ {"id" 1784,
+  "name" "filter",
+  "ns" "clojure.core",
+  "url" "http://clojuredocs.org/v/1784"}
+ {"id" 3018,
+  "name" "filter-kind",
+  "ns" "incanter.processing",
+  "url" "http://clojuredocs.org/v/3018"}
+ {"id" 3496,
+  "name" "ant-filter",
+  "ns" "lancet",
+  "url" "http://clojuredocs.org/v/3496"}
+ {"id" 4156,
+  "name"
+  "swank.util.class_browse.proxy$java.lang.Object$FilenameFilter$d73a157b",
+  "ns" "swank.util.class-browse",
+  "url" "http://clojuredocs.org/v/4156"}
+ {"id" 5504,
+  "name" "filter",
+  "ns" "clojure.core",
+  "url" "http://clojuredocs.org/v/5504"}]
+search=> 
+```
 
 data.jsonについては[data.jsonでJSONの読み書き](http://athos.hatenablog.com/entry/dealing_with_JSON_using_data_json)を参照すると良いでしょう.
