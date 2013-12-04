@@ -1,16 +1,26 @@
 # core.async
 
-# channel
+core.asyncはその名の通り非同期プログラミングをサポートします.
 
-core.asyncではchannelを用いて値をやりとりする.
+この記事では主な使い方とサンプルを紹介していきます.
 
-channelの生成には`chan`を使う.
+## インストール
 
-channelに値を書き込むには`>!!`,読み込むには`<!!`を使う.
+この記事に記載されるコードは以下の環境で動作します.
 
-これらの関数は同期的に実行され,操作が完了するまでスレッドはブロックされる.
+```clojure
+(defproject programming "0.1.0-SNAPSHOT"
+  :dependencies [[org.clojure/clojure "1.5.1"]
+                 [org.clojure/core.async "0.1.256.0-1bf8cf-alpha"]])
+```
 
-通常,`future`などと組み合わせて使う.
+## チャネル
+
+core.asyncではチャネルを用いて値をやりとりします.
+
+チャネルの生成には`chan`を使い,チャネルに値を書き込むには`>!!`,読み込むには`<!!`を使います.
+
+これらの関数は操作が完了するまでスレッドをブロックすることから,通常,`future`などと組み合わせて使います.
 
 ```clojure
 (require '[clojure.core.async :refer (chan <!! >!!)])
@@ -21,7 +31,7 @@ channelに値を書き込むには`>!!`,読み込むには`<!!`を使う.
   (assert (= @r "hello")))
 ```
 
-`timeout`は指定した時間の後閉じられるchannelを返す.
+`timeout`は指定した時間の後閉じられるチャネルを返します.
 
 ```clojure
 (require '[clojure.core.async :refer (timeout <!!)])
@@ -29,11 +39,11 @@ channelに値を書き込むには`>!!`,読み込むには`<!!`を使う.
 (assert (= (<!! (timeout 1000)) nil))
 ```
 
-# go
+## go
 
-core.asyncが提供する非同期実行の仕組み.
+core.asyncが提供する非同期実行の仕組みです.
 
-`>!!`と`<!!`の代わりに,`>!`と`<!`を用いる.
+`go`の内側では`>!!`と`<!!`の代わりに,`>!`と`<!`を用います.
 
 ```clojure
 (require '[clojure.core.async :refer (chan <! >! go go-loop)])
@@ -45,78 +55,100 @@ core.asyncが提供する非同期実行の仕組み.
       (assert (= (<! c) 2))))
 ```
 
-# alt!
+`go-loop`は単なる(go (loop ...))の糖衣構文です.
 
-`alts!`は複数のchannelの内,書き込みが行われたchannelと値のペアを返す.
+core.asyncで定義される関数は,`go`の内側では!,外側では!!というsuffixが付くと覚えておけば良いでしょう.
+
+`go`は`<!`や`>!`の呼び出しを見つけ出し,ステートマシンを生成します.
+
+`go`の内側で動的束縛やSTMなどを使うと,うまく動かない事があるので注意しましょう.
+
+## チャネルの選択
+
+`alts!`は複数のチャネルの内,書き込みが行われたチャネルと値のペアを返します.
 
 ```clojure
 (require '[clojure.core.async :refer (chan >! <!! >!! alts! go)])
 
 (let [c1 (chan)
-      c2 (chan)
-      r (chan)]
-  (go (while true (>! r (alts! [c1 c2]))))
-  (>!! c1 "foo")
-  (assert (= (<!! r) ["foo" c1]))
-  (>!! c2 "bar")
-  (assert (= (<!! r) ["bar" c2])))
+      c2 (chan)]
+  (go (while true
+        (let [[v c] (alts! [c1 c2])]
+          (>! c (inc v)))))
+  (go (>! c1 0)
+      (assert (= (<! c1) 1)))
+  (go (>! c2 2)
+      (assert (= (<! c2) 3))))
 ```
 
-`alt!`は複数のchannelの操作から一つ選択する.
+`alt!`は複数のチャネルの操作から一つ選択します.
 
 ```clojure
-(require '[clojure.core.async :refer (chan >! <!! >!! alt! go)])
+(require '[clojure.core.async :refer (chan >! <! alt! go)])
 
 (let [c1 (chan)
-      c2 (chan)
-      c3 (chan)
-      r (chan)]
+      c2 (chan)]
   (go (while true
-        (>! r (alt! [c1 c2] ([v c] [v c])
-                    c3 ([v] v)))))
-  (>!! c1 "foo")
-  (assert (= (<!! r) ["foo" c1]))
-  (>!! c2 "bar")
-  (assert (= (<!! r) ["bar" c2]))
-  (>!! c3 "baz")
-  (assert (= (<!! r) "baz")))
+        (alt! c1 ([v c] (>! c (inc v)))
+              c2 ([v c] (>! c (dec v))))))
+  (go (>! c1 0)
+      (assert (= (<! c1) 1)))
+  (go (>! c2 0)
+      (assert (= (<! c2) -1))))
 ```
 
-これらの関数は`timeout`と組み合わせると有用である.
+これらの関数は`timeout`と組み合わせると有用です.
 
 ```clojure
-(require '[clojure.java.io :refer (as-url)])
-(require '[clojure.core.async :refer (chan timeout >! >!! alt! go)])
+(require '[clojure.core.async :refer (chan timeout >! <!! alt! go)])
 
 (let [c (chan)]
-  (go (alt! c ([v] (spit "clojuredocs.html" v))
-            (timeout 10000) ([] (prn "timeout"))))
-  (go (>! c (slurp (as-url "http://clojuredocs.org")))))
+  (go (alt! (timeout 10000) ([] (>! c "foo"))
+            (timeout 100) ([] (>! c "bar"))))
+  (assert (= (<!! c) "bar")))
 ```
 
-# ops
+## サンプル
 
-channelのtarget,sourceに対して`map`や`filter`を適用する.
+簡単なサンプルプログラムを見てみましょう.
+
+clojuredocsのAPIを使って,複数のライブラリから関数を検索します.
 
 ```clojure
-(require '[clojure.core.async :refer (chan <! >! filter> map< go go-loop)])
+(ns clojuredocs-search
+  (:require [clojure.pprint :refer (pprint)]
+            [clojure.java.io :as io]
+            [clojure.data.json :as json]
+            [clojure.core.async :refer (chan timeout go >! <! alt! >!!)]))
 
-(let [c (->> (chan)
-             (filter> odd?)
-             (map< #(* % %)))]
-  (go-loop [n 0] (>! c n) (recur (inc n)))
-  (go (assert (= (<! c) 1))
-      (assert (= (<! c) 9))
-      (assert (= (<! c) 25))))
+(def deadline 3000)
+
+(defn search [query]
+  (-> (str "http://api.clojuredocs.org/search/" query)
+      io/as-url
+      io/reader
+      json/read))
+
+(defn prompt []
+  (print "search=> ")
+  (flush))
+
+(defn -main []
+  (let [query (chan)]
+    (go (while true
+          (let [query (<! query)
+                result (chan)]
+            (go (>! result (or (search query) [])))
+            (alt! result ([v] (pprint v))
+                  (timeout deadline) ([] (println "timeout")))
+            (prompt))))
+    (while true
+      (prompt)
+      (>!! query (read-line)))))
 ```
 
-channel同士をpipeでつなぐ.
+標準入力からクエリを取得し,`go`の内側で非同期に通信します.
 
-```clojure
-(require '[clojure.core.async :refer (chan <! >! pipe go)])
+`alt!`を使って通信結果が返った時とタイムアウトした時で場合分けしています.
 
-(let [in (chan) out (chan)]
-  (go (dotimes [n 10] (>! in n)))
-  (go (while true (prn (<! out))))
-  (pipe in out))
-```
+data.jsonについては[data.jsonでJSONの読み書き](http://athos.hatenablog.com/entry/dealing_with_JSON_using_data_json)を参照すると良いでしょう.
