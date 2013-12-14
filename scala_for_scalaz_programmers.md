@@ -9,7 +9,7 @@ Scalazを使わずにScalaだけで記述するためのメモ.
 
 ## unfold
 
-Scalaz
+### Scalaz
 
 ```scala
 import scala.language.postfixOps
@@ -35,7 +35,7 @@ def chop8[A](as: List[A]) = unfold(as) {
 chop8(1 to 20 toList).toList assert_=== List(List(1, 2, 3, 4, 5, 6, 7, 8), List(9, 10, 11, 12, 13, 14, 15, 16), List(17, 18, 19, 20))
 ```
 
-Scala
+### Scala
 
 ```scala
 import scala.language.postfixOps
@@ -52,7 +52,7 @@ assert(chop8(1 to 20 toList).toList == List(List(1, 2, 3, 4, 5, 6, 7, 8), List(9
 
 ## sequence
 
-Scalaz
+### Scalaz
 
 ```scala
 import scalaz.std.anyVal._
@@ -67,7 +67,7 @@ List('foo, 'bar, 'baz).map(m.get).sequence assert_=== Some(List(2, 3, 5))
 List('foo, 'hoge).map(m.get).sequence assert_=== None
 ```
 
-Scala
+### Scala
 
 ```scala
 val m = Map('foo -> 2, 'bar -> 3, 'baz -> 5)
@@ -81,7 +81,7 @@ assert(sequence(List('foo, 'hoge).map(m.get)) == None)
 
 ## MapMonoid
 
-Scalaz
+### Scalaz
 
 ```scala
 import scalaz.std.anyVal._
@@ -93,7 +93,7 @@ val m = Map('foo -> 5, 'bar -> 7) |+| Map('foo -> 11, 'baz -> 13)
 assert(m == Map('foo -> 16, 'bar -> 7, 'baz -> 13))
 ```
 
-Scala
+### Scala
 
 ```scala
 val m = Map('foo -> 5, 'bar -> 7).foldLeft(Map('foo -> 11, 'baz -> 13)) {
