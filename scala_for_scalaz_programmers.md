@@ -45,7 +45,7 @@ def int2bin(i: Int) = Stream.iterate(i)(_ / 2).takeWhile(_ != 0).map(_ % 2)
 assert(int2bin(10).toList == List(0, 1, 0, 1))
 
 //def chop8[A](as: List[A]) = as.sliding(8, 8)
-def chop8[A](as: List[A]) = Stream.iterate(as.splitAt(8))(_._2.splitAt(8)).takeWhile(_._1.nonEmpty).map(_._1)
+def chop8[A](as: List[A]) = Stream.iterate(as.splitAt(8))(_._2.splitAt(8)).map(_._1).takeWhile(_.nonEmpty)
 
 assert(chop8(1 to 20 toList).toList == List(List(1, 2, 3, 4, 5, 6, 7, 8), List(9, 10, 11, 12, 13, 14, 15, 16), List(17, 18, 19, 20)))
 ```
