@@ -26,7 +26,6 @@ def int2bin(i: Int) = unfold(i) {
 
 int2bin(10).toList assert_=== List(0, 1, 0, 1)
 
-//def chop8[A](as: List[A]) = as.sliding(8, 8)
 def chop8[A](as: List[A]) = unfold(as) {
   case Nil => None
   case xs => Some(xs.splitAt(8))
@@ -48,6 +47,35 @@ assert(int2bin(10).toList == List(0, 1, 0, 1))
 def chop8[A](as: List[A]) = Stream.iterate(as.splitAt(8))(_._2.splitAt(8)).map(_._1).takeWhile(_.nonEmpty)
 
 assert(chop8(1 to 20 toList).toList == List(List(1, 2, 3, 4, 5, 6, 7, 8), List(9, 10, 11, 12, 13, 14, 15, 16), List(17, 18, 19, 20)))
+```
+
+## bimap
+
+### Scalaz
+
+```scala
+import scalaz.{\/, -\/, \/-}
+import scalaz.syntax.id._
+import scalaz.syntax.equal._
+import scalaz.std.string._
+import scalaz.std.list._
+import scalaz.std.vector._
+
+def conj[A](coll: List[A] \/ Vector[A], x: A) =
+  coll.bimap(x :: _, _ :+ x)
+
+conj(List("foo", "bar").left[Vector[String]], "baz") assert_=== -\/(List("baz", "foo", "bar"))
+conj(Vector("foo", "bar").right[List[String]], "baz") assert_=== \/-(Vector("foo", "bar", "baz"))
+```
+
+### Scala
+
+```scala
+def conj[A](coll: Either[List[A], Vector[A]], x: A) =
+  coll.left.map(x :: _).right.map(_ :+ x)
+
+assert(conj(Left[List[String], Vector[String]](List("foo", "bar")), "baz") == Left(List("baz", "foo", "bar")))
+assert(conj(Right[List[String], Vector[String]](Vector("foo", "bar")), "baz") == Right(Vector("foo", "bar", "baz")))
 ```
 
 ## sequence
