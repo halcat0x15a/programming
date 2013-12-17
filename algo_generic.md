@@ -1,6 +1,11 @@
+---
+layout: default
+title: core.async
+---
+
 # algo.generic
 
-Clojureの一般的な関数を総称的な関数として提供するライブラリです.
+Clojureの関数を総称的な関数として提供するライブラリです.
 
 ## Install
 
@@ -79,7 +84,20 @@ algo.generic.arithmeticの`zero-type`と`one-type`について見てみましょ
 
 このように,algo.genericの関数はMultimethodで定義されているため,外部からの拡張が可能です.
 
-四則演算だけでなく,モジュール毎に一般化された関数が定義されています.
+さらに,algo.genericの関数を使った定義ならば,その関数もまた拡張が可能です.
+
+```clojure
+(refer-clojure :exculde [*])
+(require '[clojure.algo.generic.arithmetic :refer (*)])
+(require '[complex :refer (->Complex)])
+
+(defn square [x] (* x x))
+
+(assert (= (square 3) 9))
+(assert (= (square (->Complex 1 -1)) (->Complex 0 -2)))
+```
+
+また,四則演算だけでなく,モジュール毎に総称的な関数が定義されています.
 
 * algo.generic.arithmetic
 * algo.generic.collection
