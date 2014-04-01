@@ -1,6 +1,6 @@
 ---
 layout: default
-title: continuations
+title: Continuations and for-comprehension
 ---
 
 # 限定継続とfor式
