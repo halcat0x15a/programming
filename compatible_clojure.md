@@ -7,7 +7,7 @@ title: Compatible Clojure
 
 ClojureとClojureScriptの両方で動くコードの書き方
 
-# crossovers
+## crossovers
 
 もっとも重要なものとして,lein-cljsbuildの機能にcrossoversがある.
 
@@ -43,7 +43,7 @@ ClojureとClojureScriptの両方で動くコードの書き方
 └── project.clj
 ```
 
-# CLJSBUILD-REMOVE
+## CLJSBUILD-REMOVE
 
 lein-cljsbuildによるプリプロセッサがいくつか存在する.
 
@@ -78,13 +78,13 @@ lein-cljsbuildによるプリプロセッサがいくつか存在する.
 
 しかし,この機能はあくまでlein-cljsbuildが提供するものであり,ClojureやClojureScriptが提供するものではないということに留意したい.
 
-# Macro
+## Macro
 
 コンパイル単位を分けるため,別ファイルに記述する必要がある.
 
 上記の方法で,同一のコードに`require`を記述することが可能である.
 
-# Types
+## Types
 
 clojure.langに定義されるクラスは大抵の場合cljs.coreに定義される.
 
@@ -115,7 +115,7 @@ ClojureScript:cljs.user> (type "")
 >
 ```
 
-# Exception
+## Exception
 
 ClojureScriptではどんなオブジェクトでも`throw`できるが,ClojureはJavaと同様にThrowableのみを`throw`できる.
 

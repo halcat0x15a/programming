@@ -1,6 +1,6 @@
 ---
 layout: default
-title: Scalaz
+title: continuations
 ---
 
 # 限定継続とfor式

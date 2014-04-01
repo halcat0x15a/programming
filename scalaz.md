@@ -5,7 +5,7 @@ title: Scalaz
 
 # Scalaz
 
-# Apply, Applicative
+## Apply, Applicative
 
 コンテキスト内の関数をコンテキスト内の値に適用する.
 
@@ -49,7 +49,7 @@ import scalaz.syntax.id._
 def apply[F[_]: Apply, A, B, C, D, E](f: A => B => C => D => E)(a: F[A], b: F[B], c: F[C], d: F[D]) = f |> a.map |> b.<*> |> c.<*> |> d.<*>
 ```
 
-# Catchable
+## Catchable
 
 あるコンテキストで例外を扱う.
 
@@ -78,7 +78,7 @@ implicit object ThrowableInstance extends Show[Throwable] with Equal[Throwable] 
 Task("hoge".toInt).attempt.run assert_=== -\/(new NumberFormatException("""For input string: "hoge""""))
 ```
 
-# Nondeterminism
+## Nondeterminism
 
 あるコンテキストで複数の値から非決定的な選択を行う.
 
@@ -105,7 +105,7 @@ val sleep5s = Task { Thread.sleep(5000); 5 }
 Nondeterminism[Task].chooseAny(sleep3s, Seq(sleep1s, sleep5s)).run._1 assert_=== 1
 ```
 
-# Task
+## Task
 
 例外を扱う`Future`.
 
