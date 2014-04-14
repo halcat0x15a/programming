@@ -5,7 +5,16 @@ title: scalaz-stream
 
 # scalaz-stream
 
-# Process
+IterateeやMachinesなどのStreaming I/O libraryのひとつ.
+
+以下の特徴がある.
+
+* 合成可能な手続き
+* 高い表現力
+* 省メモリ
+* 高速
+
+## Process
 
 ストリームを表現する
 
@@ -15,7 +24,7 @@ Processは以下のコンストラクタを持つ
 * Emit
 * Halt
 
-## Await
+### Await
 
 ```scala
 case class Await[F[_], A, +O](
@@ -32,7 +41,7 @@ case class Await[F[_], A, +O](
 
 入力が枯渇している場合は`fallback`が,例外が発生した場合は`cleanup`が評価される.
 
-## Emit
+### Emit
 
 ```scala
 case class Emit[F[_], O](
@@ -43,7 +52,7 @@ case class Emit[F[_], O](
 
 `head`は出力列,`tail`は継続を表現する.
 
-## Halt
+### Halt
 
 ```scala
 case class Halt(cause: Throwable) extends Process[Nothing, Nothing]
@@ -137,7 +146,7 @@ def mkString[A: Show]: Process1[A, String] = process1.foldMap(_.shows)
 mkString[Int].apply(1 to 3).toList assert_=== List("123")
 ```
 
-# pipe
+## pipe
 
 `Process`同士は`pipe`によって連結することが可能である.
 
@@ -147,7 +156,7 @@ numbers.pipe(inc).take(3).toList assert_=== List(1, 2, 3)
 numbers.take(3).pipe(mkString).toList assert_=== List("012")
 ```
 
-# Monad
+## Monad
 
 `Process`はMonadPlusである.
 
@@ -167,7 +176,7 @@ val toUpper: Process1[String, Char] = for {
 Process.emit("foo bar").pipe(toUpper).toList assert_=== List('F', 'O', 'O', 'B', 'A', 'R')
 ```
 
-# io
+## io
 
 I/Oに関する関数は`scalaz.stream.io`に定義される.
 
