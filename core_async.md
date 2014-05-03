@@ -313,5 +313,3 @@ search=>
 ```
 
 data.jsonについては[data.jsonでJSONの読み書き](http://athos.hatenablog.com/entry/dealing_with_JSON_using_data_json)を参照すると良いでしょう.
-
-## まとめ
