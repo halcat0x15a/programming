@@ -34,7 +34,7 @@ project.cljは以下の通り.
 ```clojure
 (require '[clojure.data.codec.base64 :refer (decode)])
 
-(assert (= (->> '(81 85 74 68) (map byte) byte-array decode String.) "ABC"))
+(assert (= (->> '(81 85 74 68) (into-array Byte/TYPE) decode String.) "ABC"))
 ```
 
 他には,java.io.InputStreamからjava.io.OutputStreamへエンコード,デコードするための`encoding-transfer`と`decoding-transfer`が定義されています.

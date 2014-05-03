@@ -110,7 +110,7 @@ val hello: Process0[Char] = Process.emitAll("hello")
 
 hello.toList assert_=== List('h', 'e', 'l', 'l', 'o')
 
-lazy val numbers: Process0[Int] = Process.emit(0) ++ numbers.map(_ + 1)
+lazy val numbers: Process0[Int] = Process(0, 1, 2, 3, 4, 5)
 
 numbers.take(3).toList assert_=== List(0, 1, 2)
 ```
