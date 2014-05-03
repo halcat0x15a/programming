@@ -9,7 +9,7 @@ Scalazを使わずにScalaだけで記述するためのメモ.
 
 ## unfold
 
-### Scalaz
+Scalaz
 
 ```scala
 import scala.language.postfixOps
@@ -34,7 +34,7 @@ def chop8[A](as: List[A]) = unfold(as) {
 chop8(1 to 20 toList).toList assert_=== List(List(1, 2, 3, 4, 5, 6, 7, 8), List(9, 10, 11, 12, 13, 14, 15, 16), List(17, 18, 19, 20))
 ```
 
-### Scala
+Scala
 
 ```scala
 import scala.language.postfixOps
@@ -51,7 +51,7 @@ assert(chop8(1 to 20 toList).toList == List(List(1, 2, 3, 4, 5, 6, 7, 8), List(9
 
 ## bimap
 
-### Scalaz
+Scalaz
 
 ```scala
 import scalaz.{\/, -\/, \/-}
@@ -64,23 +64,23 @@ import scalaz.std.vector._
 def conj[A](coll: List[A] \/ Vector[A], x: A) =
   coll.bimap(x :: _, _ :+ x)
 
-conj(List("foo", "bar").left[Vector[String]], "baz") assert_=== -\/(List("baz", "foo", "bar"))
-conj(Vector("foo", "bar").right[List[String]], "baz") assert_=== \/-(Vector("foo", "bar", "baz"))
+conj(List("foo", "bar").left, "baz") assert_=== -\/(List("baz", "foo", "bar"))
+conj(Vector("foo", "bar").right, "baz") assert_=== \/-(Vector("foo", "bar", "baz"))
 ```
 
-### Scala
+Scala
 
 ```scala
 def conj[A](coll: Either[List[A], Vector[A]], x: A) =
   coll.left.map(x :: _).right.map(_ :+ x)
 
-assert(conj(Left[List[String], Vector[String]](List("foo", "bar")), "baz") == Left(List("baz", "foo", "bar")))
-assert(conj(Right[List[String], Vector[String]](Vector("foo", "bar")), "baz") == Right(Vector("foo", "bar", "baz")))
+assert(conj(Left(List("foo", "bar")), "baz") == Left(List("baz", "foo", "bar")))
+assert(conj(Right(Vector("foo", "bar")), "baz") == Right(Vector("foo", "bar", "baz")))
 ```
 
 ## sequence
 
-### Scalaz
+Scalaz
 
 ```scala
 import scalaz.std.anyVal._
@@ -95,7 +95,7 @@ List('foo, 'bar, 'baz).map(m.get).sequence assert_=== Some(List(2, 3, 5))
 List('foo, 'hoge).map(m.get).sequence assert_=== None
 ```
 
-### Scala
+Scala
 
 ```scala
 val m = Map('foo -> 2, 'bar -> 3, 'baz -> 5)
@@ -109,7 +109,7 @@ assert(sequence(List('foo, 'hoge).map(m.get)) == None)
 
 ## MapMonoid
 
-### Scalaz
+Scalaz
 
 ```scala
 import scalaz.std.anyVal._
@@ -121,7 +121,7 @@ val m = Map('foo -> 5, 'bar -> 7) |+| Map('foo -> 11, 'baz -> 13)
 assert(m == Map('foo -> 16, 'bar -> 7, 'baz -> 13))
 ```
 
-### Scala
+Scala
 
 ```scala
 val m = Map('foo -> 5, 'bar -> 7).foldLeft(Map('foo -> 11, 'baz -> 13)) {
