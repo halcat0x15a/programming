@@ -7,13 +7,6 @@ title: Lisp on Clojure
 
 Clojureの特徴を簡単なLisp評価機を作る過程で紹介します.
 
-紹介する機能には以下のものがあります.
-
-* Multimethod
-* Destructuring
-* Arrow
-* Procotol
-
 ## 評価機
 
 この評価機は,以下のような動作をします.
@@ -30,13 +23,13 @@ Clojureの特徴を簡単なLisp評価機を作る過程で紹介します.
 
 この例は`env`の元で関数`double`と`foo`を定義し,`assert`により`foo`の値が12であることを確かめています.
 
-## Atom
+### Atom
 
 Clojureは`def`により`var`を`namespace`に束縛しています.
 
 しかし,通常他のLispのように`set!`による代入は出来ません.
 
-ここでは,可変参照としてatomを使用します.
+ここでは,可変参照として`atom`を使用します.
 
 ```clojure
 (def foo (atom 1))
@@ -51,6 +44,8 @@ Clojureは`def`により`var`を`namespace`に束縛しています.
 
 (assert (= @foo 3))
 ```
+
+`@`は`deref`の呼び出しであり,Atomの現在の値を返します.
 
 ## 自己評価式
 
@@ -132,6 +127,8 @@ ClojureのMultimethodを用いて,`eval`を変更することなく制御構造�
 
 ## define
 
+`swap!`によりAtomの値を書き換えます.
+
 Clojureでは無名関数(fn [x] (f x))を#(f %)と記述できます.
 
 ```clojure
@@ -145,7 +142,7 @@ Clojureでは無名関数(fn [x] (f x))を#(f %)と記述できます.
 
 ## begin
 
-&を使うことで複数の値を束縛出来ます.
+`&`を使うことで複数の値を束縛出来ます.
 
 ```clojure
 (defmethod eval-form 'begin [env [& exps]]
@@ -156,7 +153,7 @@ Clojureでは無名関数(fn [x] (f x))を#(f %)と記述できます.
 
 ### Arrow
 
-Arrowは`->`や`->>`の呼び名で以下の利点があります.
+`->`や`->>`はArrowと呼ばれ,以下のような利点があります.
 
 * データの流れが分り易い
 * ネストが無くなる
@@ -187,9 +184,9 @@ Arrowは`->`や`->>`の呼び名で以下の利点があります.
   (appl (eval env operator) (map (partial eval env) operands)))
 ```
 
-### Protocol, Type, Record
+### Protocol
 
-ProtocolはJavaのinterfaceと似ています.
+ProtocolはClojureにおける抽象機構であり,Javaのinterfaceと似ています.
 
 TypeやRecordは定義時にProtocolを実装することができます.
 
@@ -253,3 +250,16 @@ Clojureのみで書かれているので,JavaScriptにコンパイルが可能�
   js/Function
   (appl [f args] (apply f args)))
 ```
+
+以下に今回実装した評価機を示します.
+
+<div>
+  <div class="form-group">
+    <label for="result" class="control-label">Result</label>
+    <input type="text" class="form-control" id="result" readonly>
+  </div>
+  <textarea id="source" class="form-control"></textarea>
+  <button class="btn btn-default" onclick="document.getElementById('result').value = evaluator.run(document.getElementById('source').value)">Eval</button>
+</div>
+
+<script src="target/evaluator.js" type="text/javascript"></script>

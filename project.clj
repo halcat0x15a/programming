@@ -4,6 +4,7 @@
                  [org.clojure/algo.generic "0.1.1"]
                  [org.clojure/data.json "0.2.3"]
                  [org.clojure/data.codec "0.1.0"]]
-  :plugins [[lein-cljsbuild "0.3.4"]]
-  :cljsbuild {:builds [{}]
-              :crossovers [anyware.core]})
+  :plugins [[lein-cljsbuild "1.0.3"]]
+  :cljsbuild {:builds {:evaluator {:compiler {:output-to "target/evaluator.js"
+                                              :optimizations :advanced
+                                              :pretty-print false}}}})
