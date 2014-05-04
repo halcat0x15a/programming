@@ -1,6 +1,6 @@
 ---
 layout: default
-title: core.async
+title: algo.generic
 ---
 
 # algo.generic

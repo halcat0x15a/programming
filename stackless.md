@@ -1,6 +1,6 @@
 ---
 layout: default
-title: scalaz-stream
+title: Stackless Scala
 ---
 
 # スタックレスScala
