@@ -271,7 +271,7 @@ final def runT: A = resume match {
 
 ### Stackless Scala
 
-`flatMap`,`map`が定義されたことによって最初の例は次のようになる
+`flatMap`,`map`が定義されたことによって最初の例は次のようになります
 
 ```scala
 val Zero = BigInt(0)
@@ -337,7 +337,7 @@ trait Functor[F[_]] {
 }
 ```
 
-Function0Functorは次のような定義になります
+`Function0Functor`は次のような定義になります
 
 ```scala
 implicit val f0Functor =
