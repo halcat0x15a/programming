@@ -74,3 +74,27 @@ object ScalazStream extends App {
   download.run
 
 }
+
+object CSVParser {
+
+  import scalaz.stream.{Process, Process1}
+
+  def parser(char: Char) = for {
+    input <- Process.await1[Char]
+    if input == char
+  } yield char
+
+  def or(first: Process1[Char, Char], second: Process1[Char, Char]) = for {
+    input <- Process.await1[Char]
+    result <- (Process(input) pipe first) orElse (Process(input) pipe second)
+  } yield result
+
+  def cr = parser('\r')
+
+  def lf = parser('\n')
+
+  def crlf = cr ++ lf
+
+  def newline = or(crlf, or(cr, lf))
+
+}
