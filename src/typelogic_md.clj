@@ -31,10 +31,18 @@
     (ann-list ctx expr types)
     (matcha [types] ([[[::fn type . params] . params]]))))
 
+(defn ann-tag [sym type]
+  (fresh [tag]
+    (is tag sym (comp :tag meta))
+    (pred tag (complement nil?))
+    (is type tag resolve)))
+
 (defna ann-fn [ctx syms exprs params return]
   ([_ [] _ [] _] (ann-do ctx exprs return))
   ([_ [sym . syms'] _ [param . params'] _]
    (fresh [ctx']
+     (conda [(ann-tag sym param)]
+            [succeed])
      (conso [sym param] ctx ctx')
      (ann-fn ctx' syms' exprs params' return))))
 
@@ -69,3 +77,7 @@
 (check '(fn [a] a))
 
 (check '((fn [a] a) ""))
+
+(check '(fn [^String s] s))
+
+(check '((fn [^String s] s) 0))

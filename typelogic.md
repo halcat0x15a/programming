@@ -1,6 +1,6 @@
 ---
 layout: default
-title: type inference and logic programming
+title: type inference with logic programming
 ---
 
 # 型推論と論理プログラミング
@@ -41,7 +41,7 @@ ClojureはJVMで動作するため, Javaのリフレクションにより値か�
 
 変数と型を結びつけるために型環境を導入します.
 
-`[[a a-type] [b b-type]]`
+`[[sym type] & pairs]`
 
 型環境は変数と型のペアのベクタで表現されます.
 
@@ -68,7 +68,7 @@ ClojureはJVMで動作するため, Javaのリフレクションにより値か�
 (check [['a java.lang.String]] 'a) ; => (java.lang.String)
 ```
 
-## special form
+## special forms
 
 制御構造に対する型付けを考えてみましょう.
 
@@ -104,6 +104,8 @@ ClojureはJVMで動作するため, Javaのリフレクションにより値か�
     (ann-if ctx test consequent alternative type))
   ([_ _ _] (ann-var ctx expr type))
   ([_ _ _] (is type expr class)))
+
+(check '(do 0 [] "foo")) ; => (java.lang.String)
 
 (check '(if true ["hoge"] [])) ; => (clojure.lang.PersistentVector)
 ```
@@ -166,3 +168,45 @@ Clojureにおける関数の型は`clojure.lang.IFn`ですが, これではど�
 
 ## 論理変数と型変数
 
+`(fn [a] a)`という式に対して,この型推論器は`[::fn _0 _0]`という型付けを行います.
+
+`core.logic`は未束縛の論理変数に対して`_0`,`_1`といった風にインデックスを付けます.
+
+この関数に対して文字列を適用する式は`((fn [a] a) "")`と書くことができ,これは`java.lang.String`に推論されます.
+
+つまり,未束縛の論理変数は型システムにおける型変数とみなすことができます.
+
+## type tagによる型の明示
+
+現在の関数の型付け規則では多相的な関数しか定義できません.
+
+そこで,`type tag`により型を推論する規則を加えます.
+
+```clojure
+(defn ann-tag [sym type]
+  (fresh [tag]
+    (is tag sym (comp :tag meta))
+    (pred tag (complement nil?))
+    (is type tag resolve)))
+
+(defna ann-fn [ctx syms exprs params return]
+  ([_ [] _ [] _] (ann-do ctx exprs return))
+  ([_ [sym . syms'] _ [param . params'] _]
+   (fresh [ctx']
+     (conda [(ann-tag sym param)]
+            [succeed])
+     (conso [sym param] ctx ctx')
+     (ann-fn ctx' syms' exprs params' return))))
+
+(check '(fn [^String s] s)) ; => ([::fn java.lang.String java.lang.String])
+
+(check '((fn [^String s] s) 0)) ; => ()
+```
+
+単一化に失敗すると結果は得られず,型エラーとなります.
+
+## 再帰
+
+## メソッドとオーバーロード
+
+## サブタイピング
