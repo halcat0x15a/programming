@@ -28,10 +28,19 @@
     (ann ctx expr type)
     (ann-list ctx exprs' types')))
 
+(defna subtypes [xs ys]
+  ([[] []])
+  ([[x . xs'] [y . ys']]
+     (project [y]
+       (predc x #(isa? % y) (fn [_ _ r s] `(isa? ~(-reify s x r) ~y))))
+     (subtypes xs' ys')))
+
 (defn ann-app [ctx expr type]
   (fresh [types]
     (ann-list ctx expr types)
-    (matcha [types] ([[[::fn type . params] . params]]))))
+    (matcha [types]
+      ([[[::fn type . params] . args]]
+         (subtypes args params)))))
 
 (defn ann-tag [sym type]
   (fresh [tag]
@@ -65,8 +74,9 @@
 
 (defne ann-call [ctx methods args type]
   ([_ [[type . params] . _] _ _]
-     (project [params args] (log params args))
-     (ann-list ctx args params))
+     (fresh [args']
+       (ann-list ctx args args')
+       (subtypes args' params)))
   ([_ [_ . methods'] _ _]
      (ann-call ctx methods' args type)))
 
@@ -132,3 +142,7 @@
 (check '(fn [s] (Class/forName s)))
 
 (check '(fn [^String s] (.endsWith s ".clj")))
+
+(check '(.contains "clojure" "j"))
+
+(first (check '(fn [^String s c] (.contains s c))))

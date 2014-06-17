@@ -322,12 +322,71 @@ Clojureでは無名関数に名前を付けることで,再帰関数を定義す
 (check '(fn [^String s] (.endsWith s ".clj"))) ; => ([::fn boolean java.lang.String])
 ```
 
+## サブタイピング
+
+さて,メソッドの型を推論できるようになりましたがここで大きな問題が見えてきました.
+
+次の式は実行可能ですが推論できません.
+
+```clojure
+(.contains "clojure" "j")
+
+(check '(.contains "clojure" "j")) ; => ()
+```
+
+`.contains`の型を見てみましょう.
+
+```clojure
+(check '(fn [^String s c] (.contains s c))) ; => ([::fn boolean java.lang.String java.lang.CharSequence])
+```
+
+`java.lang.String`は`java.lang.CharSequence`のサブクラスですが,単純な単一化ではis-a関係を考慮することはできません.
+
+そこで,論理変数に対してあるクラスのサブタイプであることを制約として記述します.
+
+```clojure
+(defna subtypes [xs ys]
+  ([[] []])
+  ([[x . xs'] [y . ys']]
+     (project [y]
+       (predc x #(isa? % y) (fn [_ _ r s] `(isa? ~(-reify s x r) ~y))))))
+```
+
+`subtypes`は単一化の時に`isa?`を検査する制約です.
+
+これを,`ann-app`と`ann-call`に組み込みましょう.
+
+```clojure
+(defn ann-app [ctx expr type]
+  (fresh [types]
+    (ann-list ctx expr types)
+    (matcha [types]
+      ([[[::fn type . params] . args]]
+         (subtypes args params)))))
+
+(defne ann-call [ctx methods args type]
+  ([_ [[type . params] . _] _ _]
+     (fresh [args']
+       (ann-list ctx args args')
+       (subtypes args' params)))
+  ([_ [_ . methods'] _ _]
+     (ann-call ctx methods' args type)))
+```
+
+この修正により`.contains`の式に型が付くようになりました.
+
+```clojure
+(check '(.contains "clojure" "j")) ; => (boolean)
+```
+
+`.contains`には次のような型が付きます
+
+```clojure
+(check '(fn [^String s c] (.contains s c))) ; => (([::fn boolean java.lang.String _0] :- (isa? _0 java.lang.CharSequence)))
+```
+
 ## オーバーロード
 
 Clojureでは引数の数でオーバーロードされた関数を定義することが可能です.
 
-[むずかしい](https://gist.github.com/halcat0x15a/173b647b247221c9a1dd).
-
-## プリミティブ型
-
-## サブタイピング
+再帰とか考えると[むずかしい](https://gist.github.com/halcat0x15a/173b647b247221c9a1dd).
