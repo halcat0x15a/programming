@@ -186,11 +186,11 @@ Clojureにおける関数の型は`clojure.lang.IFn`ですが, これではど�
 
 つまり,未束縛の論理変数は型システムにおける型変数とみなすことができます.
 
-## type tagによる型の明示
+## Type tagによる型の明示
 
 現在の関数の型付け規則では多相的な関数しか定義できません.
 
-そこで,`type tag`により型を推論する規則を加えます.
+そこで,`tag`により型を推論する規則を加えます.
 
 ```clojure
 (defn ann-tag [sym type]
@@ -221,6 +221,8 @@ Clojureでは無名関数に名前を付けることで,再帰関数を定義す
 
 名前付き関数に対する規則を`ann`に追加しましょう.
 
+型環境に自身を加えることで再帰することができます.
+
 ```clojure
 (defna ann [ctx expr type]
   ([_ ['do . exprs] _]
@@ -243,10 +245,89 @@ Clojureでは無名関数に名前を付けることで,再帰関数を定義す
 (check '(fn f [a] (if true a (f "")))) ; => ([::fn java.lang.String java.lang.String])
 ```
 
+## メソッド
+
+`.`はクラスメソッドやインスタンスメソッドの呼び出しを行うための特殊形式です.
+
+メソッドはクラスからリフレクションにより取得可能です.
+
+```clojure
+(defn methods [^Class class method]
+  (->> (.getMethods class)
+       (filter #(= (.getName ^Method %) (name method)))
+       (map (fn [ ^Method m] (cons (.getReturnType m) (.getParameterTypes m))))))
+```
+
+メソッドはオーバーロードされている可能性があるため,複数の型を単一化する規則を与えます.
+
+```clojure
+(defne ann-call [ctx methods args type]
+  ([_ [[type . params] . _] _ _]
+     (ann-list ctx args params))
+  ([_ [_ . methods'] _ _]
+     (ann-call ctx methods' args type)))
+```
+
+クラスメソッドは`name`を解決して得た型から取得されます.
+
+```Clojure
+(defn ann-classmethod [ctx name method args type]
+  (fresh [class]
+    (pred name symbol?)
+    (is class name resolve)
+    (pred class class?)
+    (project [class method]
+      (ann-call ctx (methods class method) args type))))
+```
+
+インスタンスメソッドは`expr`を評価して得た型から取得されます.
+
+```clojure
+(defn ann-instancemethod [ctx expr method args type]
+  (fresh [class]
+    (ann ctx expr class)
+    (project [class method]
+      (ann-call ctx (methods class method) args type))))
+```
+
+`ann`をメソッド呼び出しに対応させると次のようになります.
+
+```clojure
+(defna ann [ctx expr type]
+  ([_ ['do . exprs] _]
+     (ann-do ctx exprs type))
+  ([_ ['if test consequent alternative] _]
+     (ann-if ctx test consequent alternative type))
+  ([_ ['fn* name [syms . exprs]] [::fn return . params]]
+     (pred name symbol?)
+     (fresh [ctx']
+       (conso [name type] ctx ctx')
+       (ann-fn ctx' syms exprs params return)))
+  ([_ ['fn* [syms . exprs]] [::fn return . params]]
+    (ann-fn ctx syms exprs params return))
+  ([_ [dot name method . args] _]
+     (pred dot #(= % '.))
+     (ann-classmethod ctx name method args type))
+  ([_ [dot name method . args] _]
+     (pred dot #(= % '.))
+     (ann-instancemethod ctx name method args type))
+  ([_ _ _]
+     (pred expr seq?)
+     (ann-app ctx expr type))
+  ([_ _ _] (ann-var ctx expr type))
+  ([_ _ _] (is type expr class)))
+
+(check '(fn [s] (Class/forName s))) ; => ([::fn java.lang.Class java.lang.String])
+
+(check '(fn [^String s] (.endsWith s ".clj"))) ; => ([::fn boolean java.lang.String])
+```
+
 ## オーバーロード
 
 Clojureでは引数の数でオーバーロードされた関数を定義することが可能です.
 
-むずかしい.
+[むずかしい](https://gist.github.com/halcat0x15a/173b647b247221c9a1dd).
+
+## プリミティブ型
 
 ## サブタイピング
