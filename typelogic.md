@@ -48,9 +48,9 @@ ClojureはJVMで動作するため, Javaのリフレクションにより値か�
 型環境から型を導出する規則は次のようになります.
 
 ```clojure
-(defna ann-var [ctx expr type]
-  ([[[expr type] . _] _ _])
-  ([[_ . ctx'] _ _] (ann-var ctx' expr type)))
+(defna ann-var [ctx sym type]
+  ([[[sym type] . _] _ _])
+  ([[_ . ctx'] _ _] (ann-var ctx' sym type)))
 ```
 
 これを使って`ann`を拡張すると次のようになります.
@@ -68,9 +68,20 @@ ClojureはJVMで動作するため, Javaのリフレクションにより値か�
 (check [['a java.lang.String]] 'a) ; => (java.lang.String)
 ```
 
-## special forms
+## 特殊形式
 
-制御構造に対する型付けを考えてみましょう.
+制御構造の最小単位として特殊形式が存在します.
+
+`clojure.walk/macroexpand-all`を使って,特殊形式を使った形に展開しましょう.
+
+```clojure
+(defn check
+  ([expr] (check [] expr))
+  ([ctx expr]
+    (run* [type] (ann ctx (macroexpand-all expr) type))))
+```
+
+特殊形式に対する型付けを考えてみましょう.
 
 `do`は複数の式を順に評価して,最後の式を結果とします.
 
@@ -152,7 +163,7 @@ Clojureにおける関数の型は`clojure.lang.IFn`ですが, これではど�
     (ann-do ctx exprs type))
   ([_ ['if test consequent alternative] _]
     (ann-if ctx test consequent alternative type))
-  ([_ ['fn syms . exprs] [::fn return . params]]
+  ([_ ['fn* [syms . exprs]] [::fn return . params]]
     (ann-fn ctx syms exprs params return))
   ([_ _ _]
     (pred expr seq?)
@@ -164,7 +175,6 @@ Clojureにおける関数の型は`clojure.lang.IFn`ですが, これではど�
 
 (check '((fn [a] a) "foo")) ; => (java.lang.String)
 ```
-
 
 ## 論理変数と型変数
 
@@ -205,8 +215,38 @@ Clojureにおける関数の型は`clojure.lang.IFn`ですが, これではど�
 
 単一化に失敗すると結果は得られず,型エラーとなります.
 
-## 再帰
+## 名前付き関数と再帰
 
-## メソッドとオーバーロード
+Clojureでは無名関数に名前を付けることで,再帰関数を定義することができます.
+
+名前付き関数に対する規則を`ann`に追加しましょう.
+
+```clojure
+(defna ann [ctx expr type]
+  ([_ ['do . exprs] _]
+    (ann-do ctx exprs type))
+  ([_ ['if test consequent alternative] _]
+    (ann-if ctx test consequent alternative type))
+  ([_ ['fn* name [syms . exprs]] [::fn return . params]]
+    (pred name symbol?)
+    (fresh [ctx']
+      (conso [name type] ctx ctx')
+      (ann-fn ctx' syms exprs params return)))
+  ([_ ['fn* [syms . exprs]] [::fn return . params]]
+    (ann-fn ctx syms exprs params return))
+  ([_ _ _]
+    (pred expr seq?)
+    (ann-app ctx expr type))
+  ([_ _ _] (ann-var ctx expr type))
+  ([_ _ _] (is type expr class)))
+
+(check '(fn f [a] (if true a (f "")))) ; => ([::fn java.lang.String java.lang.String])
+```
+
+## オーバーロード
+
+Clojureでは引数の数でオーバーロードされた関数を定義することが可能です.
+
+むずかしい.
 
 ## サブタイピング

@@ -1,6 +1,8 @@
 (ns typelogic-md
   (:refer-clojure :exclude [==])
-  (:require [clojure.core.logic :refer :all]))
+  (:require [clojure.walk :refer [macroexpand-all]]
+            [clojure.core.logic :refer :all]
+            [clojure.core.logic.nominal :as nom]))
 
 (assert (= (class "hoge") java.lang.String))
 
@@ -46,16 +48,27 @@
      (conso [sym param] ctx ctx')
      (ann-fn ctx' syms' exprs params' return))))
 
-(defna ann-var [ctx expr type]
-  ([[[expr type] . _] _ _])
-  ([[_ . ctx'] _ _] (ann-var ctx' expr type)))
+(defne ann-fns [ctx exprs type]
+  ([_ [[syms . body] . _] [::fn return . params]]
+     (ann-fn ctx syms body params return))
+  ([_ [_ . exprs'] _]
+     (ann-fns ctx exprs' type)))
+
+(defna ann-var [ctx sym type]
+  ([[[sym type] . _] _ _])
+  ([[_ . ctx'] _ _] (ann-var ctx' sym type)))
 
 (defna ann [ctx expr type]
   ([_ ['do . exprs] _]
     (ann-do ctx exprs type))
   ([_ ['if test consequent alternative] _]
     (ann-if ctx test consequent alternative type))
-  ([_ ['fn syms . exprs] [::fn return . params]]
+  ([_ ['fn* name [syms . exprs]] [::fn return . params]]
+    (pred name symbol?)
+    (fresh [ctx']
+      (conso [name type] ctx ctx')
+      (ann-fn ctx' syms exprs params return)))
+  ([_ ['fn* [syms . exprs]] [::fn return . params]]
     (ann-fn ctx syms exprs params return))
   ([_ _ _]
     (pred expr seq?)
@@ -66,7 +79,7 @@
 (defn check
   ([expr] (check [] expr))
   ([ctx expr]
-    (run* [type] (ann ctx expr type))))
+    (run* [type] (ann ctx (macroexpand-all expr) type))))
 
 (check [['a java.lang.String]] 'a)
 
@@ -81,3 +94,5 @@
 (check '(fn [^String s] s))
 
 (check '((fn [^String s] s) 0))
+
+(check '(fn f [a] (if true a (f ""))))
