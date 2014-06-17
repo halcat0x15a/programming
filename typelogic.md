@@ -270,7 +270,7 @@ Clojureでは無名関数に名前を付けることで,再帰関数を定義す
 
 クラスメソッドは`name`を解決して得た型から取得されます.
 
-```Clojure
+```clojure
 (defn ann-classmethod [ctx name method args type]
   (fresh [class]
     (pred name symbol?)
