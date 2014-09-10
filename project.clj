@@ -4,7 +4,8 @@
                  [org.clojure/core.logic "0.8.7"]
                  [org.clojure/algo.generic "0.1.1"]
                  [org.clojure/data.json "0.2.3"]
-                 [org.clojure/data.codec "0.1.0"]]
+                 [org.clojure/data.codec "0.1.0"]
+                 [org.clojure/core.typed "0.2.67"]]
   :plugins [[lein-cljsbuild "1.0.3"]]
   :cljsbuild {:builds {:evaluator {:compiler {:output-to "target/evaluator.js"
                                               :optimizations :advanced

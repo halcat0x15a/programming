@@ -250,3 +250,15 @@ object TypelevelFizzBuzz extends App {
   println(FizzBuzz[_15])
 
 }
+
+object Singleton extends App {
+
+  final val a = "a"
+  final val b = "b"
+  def f(x: a.type): String = x
+  def f(x: b.type): String = x
+  def f(x: String): String = x
+
+  f("a")
+
+}
