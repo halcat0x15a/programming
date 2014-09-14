@@ -120,39 +120,20 @@ trait Bar[-A] {
 
 ## Inheritance? Implicit parameter?
 
-`Appendable`を型クラスと継承の2通りで表現し比較する.
+`Appendable`を型クラスとサブタイピングの2通りで表現し比較する.
 
-次は型クラスによる表現である.
-
-```scala
-trait Appendable[A] {
-  def append(x: A, y: A): A
-}
-
-object Appendable {
-  def append[A](x: A, y: A)(implicit a: Appendable[A]) = a.append(x, y)
-  def double[A: Appendable](a: A) = append(a, a)
-}
-```
-
-`Int`に対する`Appendable`のインスタンスは次のようになる.
-
-```scala
-implicit object AppendableInt extends Appendable[Int] {
-  def append(x: Int, y: Int) = x + y
-}
-
-assert(Appendable.double(2) == 4)
-```
-
-次は継承による表現である.
+次はサブタイピングによる表現である.
 
 ```scala
 trait Appendable[A] extends Any { self: A =>
   def append(a: A): A
-  def double = append(this)
+  def double = append(self)
 }
 ```
+
+サブタイプを型パラメータにとることでサブタイプの値として返すことができる.
+
+例として有理数を定義する.
 
 ```scala
 case class Rational(n: Int, d: Int) extends Appendable[Rational] {
@@ -162,7 +143,7 @@ case class Rational(n: Int, d: Int) extends Appendable[Rational] {
 assert(Rational(1, 2).double == Rational(4, 4))
 ```
 
-既存の型を抽象化したいときはどうするだろうか.
+既存の型を抽象化したいときは次のようなラッパーオブジェクトを作るだろう.
 
 ```scala
 case class AppendableInt(i: Int) extends AnyVal with Appendable[AppendableInt] {
@@ -189,11 +170,22 @@ scala> 2.double == 2
 res9: Boolean = false
 ```
 
-よって既存の型を抽象化するには型クラスで表現することをおすすめする.
+implicit conversionをメソッドの追加以外に利用する場合は気をつけよう.
 
-しかし型クラスにも問題は存在する.
+次は型クラスによる表現である.
 
-`Seq`に対して`Appendable`のインスタンスを定義する.
+```scala
+trait Appendable[A] {
+  def append(x: A, y: A): A
+}
+
+object Appendable {
+  def append[A](x: A, y: A)(implicit a: Appendable[A]) = a.append(x, y)
+  def double[A: Appendable](a: A) = append(a, a)
+}
+```
+
+`Seq`に対する`Appendable`のインスタンスは次のようになる.
 
 ```scala
 implicit def appendableSeq[A] = new Appendable[Seq[A]] {
@@ -212,6 +204,19 @@ scala> Appendable.double(List(1, 2))
                                ^
 ```
 
-これは`Appendable`の型パラメータが非変であるため.
+Scalaのコレクションならば`CanBuildFrom`を使ってサブタイプを許容するインスタンスの定義できる.
 
-型パラメータを反変に書き換えるとインスタンスが定義できないということはUse Siteの項を読むとわかるだろう.
+```scala
+import scala.collection.TraversableLike
+import scala.collection.generic.CanBuildFrom
+
+implicit def appendableSeq[A, S[+T] <: TraversableLike[T, S[T]]](implicit e: CanBuildFrom[S[A], A, S[A]]) =
+  new Appendable[S[A]] {
+    def append(x: S[A], y: S[A]) = x ++ y
+  }
+
+assert(Appendable.double(List(1, 2)) == List(1, 2, 1, 2))
+assert(Appendable.double(Vector(1, 2)) == Vector(1, 2, 1, 2))
+```
+
+抽象化に関しては既存の型にも適用可能な型クラスが優れている.
