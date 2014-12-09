@@ -134,29 +134,27 @@ core.asyncではチャネルを用いて値をやりとりします.
 スレッドプールのサイズは`プロセッサ数 * 2 + 42`.
 
 ```clojure
+(require '[clojure.core.async :refer [chan >! <!! >!!]])
+
 ; future
 (time
-  (let [c (chan)
-        x (ref #{})]
+  (let [c (chan)]
     (dotimes [n 100]
       (future
-        (dosync (alter x conj (.getId (Thread/currentThread))))
         (Thread/sleep 1000)
-        (>!! c n)))
-    [(apply + (map (fn [_] (<!! c)) (range 100))) (count @x)]))
-; "Elapsed time: 1007.755119 msecs"
-; => [4950 100]
+        (>!! c (.getId (Thread/currentThread)))))
+    (count (distinct (map (fn [_] (<!! c)) (range 100))))))
+; "Elapsed time: 1270.819965 msecs"
+; => 100
  
 ; go
 (time
-  (let [c (chan)
-        x (ref #{})]
+  (let [c (chan)]
     (dotimes [n 100]
       (go
-        (dosync (alter x conj (.getId (Thread/currentThread))))
         (Thread/sleep 1000)
-        (>! c n)))
-    [(apply + (map (fn [_] (<!! c)) (range 100))) (count @x)]))
-; "Elapsed time: 2009.769909 msecs"
-; => [4950 50]
+        (>! c (.getId (Thread/currentThread)))))
+    (count (distinct (map (fn [_] (<!! c)) (range 100))))))
+; "Elapsed time: 2012.681518 msecs"
+; => 50
 ```

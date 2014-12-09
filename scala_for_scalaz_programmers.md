@@ -3,7 +3,7 @@ layout: default
 title: Scala for Scalaz Programmers
 ---
 
-# ScalazプログラマのためのScala入門
+# ScalazプログラマのためのScala
 
 Scalazを使わずにScalaだけで記述するためのメモ.
 
