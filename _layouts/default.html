@@ -3,7 +3,7 @@
   <head>
     <title>{{ page.title }}</title>
     <meta charset="UTF-8" />
-    <link rel="stylesheet" href="http://netdna.bootstrapcdn.com/bootstrap/3.1.1/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.1/css/bootstrap.min.css" />
     <link rel="stylesheet" href="pygments.css" />
   </head>
   <body>
@@ -19,6 +19,7 @@
                 Scala
                 <ul class="nav">
 	          <li><a href="stackless.html">Stackless Scala</a></li>
+	          <li><a href="curry_howard.html">Type and Logic in Scala</a></li>
 	          <li><a href="subtyping_in_scala.html">Subtyping in Scala</a></li>
 	          <li><a href="scalaz_stream.html">scalaz-stream</a></li>
 	          <li><a href="scala_for_scalaz_programmers.html">Scala for Scalaz programmers</a></li>
@@ -48,5 +49,11 @@
       </div>
     </footer>
     <script>!function(d,s,id){var js,fjs=d.getElementsByTagName(s)[0],p=/^http:/.test(d.location)?'http':'https';if(!d.getElementById(id)){js=d.createElement(s);js.id=id;js.src=p+'://platform.twitter.com/widgets.js';fjs.parentNode.insertBefore(js,fjs);}}(document, 'script', 'twitter-wjs');</script>
+    <script>
+      var tables = document.getElementsByTagName("table");
+      for (var i = 0; i < tables.length; i++) {
+        tables.item(i).className = "table"
+      }
+    </script>
   </body>
 </html>
