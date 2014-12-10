@@ -55,7 +55,7 @@ type Or[A, B] = Not[Not[A] with Not[B]]
 この定義が妥当であることは次の法則が成り立つことからわかるだろう.
 
 ```scala
-org.scalacheck.Prop.forAll((a: Boolean, b: Boolean) => !(a && b) == !a || !b).check
+org.scalacheck.Prop.forAll((a: Boolean, b: Boolean) => (a || b) == !(!a && !b)).check
 ```
 
 ただしこの定義では二重否定が使われており,`Not[Not[A]] =:= A`が成り立たないことに注意したい.
@@ -103,7 +103,7 @@ assert(map(list2opt)(List(0, 1, 2) -> List.empty[String]) == Some(0) -> None)
 
 この例では`F`から`G`への関数をタプルの各要素に適用している.
 
-さて, この`Forall`もまた否定型と存在型により表現が可能である.
+さて, この全称型もまた否定型と存在型により表現が可能である.
 
 "全てのAはPである"ということは"PでないようなAは存在しない"と言い換えることができ, これをScalaの型で表現すると次のようになる.
 
@@ -111,7 +111,9 @@ assert(map(list2opt)(List(0, 1, 2) -> List.empty[String]) == Some(0) -> None)
 type Forall[P[_]] = Not[Not[P[A]] forSome { type A }]
 ```
 
-この定義では`Forall`を構成することがより簡単になる.
+この全称型も合併型と同様に二重否定を含む.
+
+二重否定は継続渡し形式(CPS)により導入できる.
 
 ```scala
 def opt2list: Forall[({ type F[A] = Option[A] => List[A] })#F] = k => k(_.toList)
@@ -119,35 +121,24 @@ def opt2list: Forall[({ type F[A] = Option[A] => List[A] })#F] = k => k(_.toList
 def list2opt: Forall[({ type F[A] = List[A] => Option[A] })#F] = k => k(_.headOption)
 ```
 
-しかし, 二重否定が含まれるため利用する際にはそれを除去する必要がある.
+利用する際には二重否定を除去する必要がある.
 
-二重否定除去にはCPSを用いる.
+最も簡単な定義は`return`を使ったものである.
 
 ```scala
-type CPS[A] = ((A => Nothing) => Nothing) => A // Not[Not[A]] => A
+def callCC[A](f: Not[Not[A]]): A = f(a => return a)
 ```
 
-プログラム全体の継続をとれば継続の返り型はNothingとなる.
-
-その継続を呼び出すことで二重否定除去の形が得られる.
-
-Scalaにおいて継続を扱うステートメントとして`try-catch`や`return`が存在する.
-
-ここでは`return`を利用することで継続を無視して値を返す.
+これで最初に定義した全称型と同様に動作する.
 
 ```scala
-def map[F[_], A, B, G[_]](f: Forall[({ type H[A] = F[A] => G[A] })#H])(pair: (F[A], F[B])): (G[A], G[B]) = {
-  def a: G[A] = f((g: F[A] => G[A]) => return g(pair._1))
-  def b: G[B] = f((g: F[B] => G[B]) => return g(pair._2))
-  a -> b
-}
+def map[F[_], A, B, G[_]](f: Forall[({ type H[A] = F[A] => G[A] })#H])(pair: (F[A], F[B])): (G[A], G[B]) =
+  callCC[F[A] => G[A]](f)(pair._1) -> callCC[F[B] => G[B]](f)(pair._2)
 
 assert(map(opt2list)(Option("") -> Option.empty[Int]) == List("") -> Nil)
 
 assert(map(list2opt)(List(0, 1, 2) -> List.empty[String]) == Some(0) -> None)
 ```
-
-これで最初に定義した`Forall`と同様に扱うことができるようになった.
 
 # 参考
 
