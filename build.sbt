@@ -18,7 +18,8 @@ libraryDependencies in ThisBuild ++= Seq(
   "org.scala-lang.plugins" %% "scala-continuations-library" % "1.0.2",
   compilerPlugin("org.scala-lang.plugins" % "scala-continuations-plugin_2.11.2" % "1.0.2"),
   "com.chuusai" %% "shapeless" % "2.0.0",
-  "org.scalacheck" %% "scalacheck" % "1.11.6"
+  "org.scalacheck" %% "scalacheck" % "1.11.6",
+  "org.scalatest" %% "scalatest" % "2.2.1" % "test"
 )
 
 scalacOptions in ThisBuild ++= Seq(

@@ -63,13 +63,13 @@ org.scalacheck.Prop.forAll((a: Boolean, b: Boolean) => (a || b) == !(!a && !b)).
 この合併型は次のように使うことができる.
 
 ```scala
-def double[A](a: A)(implicit ev: Not[Not[A]] <:< Or[Int, String]) =
+def double[A](a: A)(implicit ev: Not[Not[A]] <:< Or[Int, String]): String =
   a match {
-    case i: Int => i + i
+    case i: Int => (i + i).toString
     case s: String => s + s
   }
 
-assert(double(2) == 4)
+assert(double(2) == "4")
 assert(double("2") == "22")
 ```
 
