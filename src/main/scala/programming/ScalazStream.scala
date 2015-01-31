@@ -86,7 +86,7 @@ object CSVParser {
 
   def or(first: Process1[Char, Char], second: Process1[Char, Char]) = for {
     input <- Process.await1[Char]
-    result <- (Process(input) pipe first) orElse (Process(input) pipe second)
+    result <- (Process(input) pipe first)// orElse (Process(input) pipe second)
   } yield result
 
   def cr = parser('\r')

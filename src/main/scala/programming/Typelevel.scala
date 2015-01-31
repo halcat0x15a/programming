@@ -250,7 +250,7 @@ object TypelevelFizzBuzz extends App {
   println(FizzBuzz[_15])
 
 }
-
+/*
 object Singleton extends App {
 
   final val a = "a"
@@ -262,3 +262,4 @@ object Singleton extends App {
   f("a")
 
 }
+ */
