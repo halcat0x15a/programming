@@ -5,19 +5,21 @@ title: Stackless Scala
 
 # スタックレスScala
 
-[Stackless Scala With Free Monads](http://days2012.scala-lang.org/sites/days2012/files/bjarnason_trampolines.pdf)を参考にTrampolineやそれを抽象化したFreeを紹介する記事です
+[Stackless Scala With Free Monads](http://days2012.scala-lang.org/sites/days2012/files/bjarnason_trampolines.pdf)を参考にTrampolineやそれを抽象化したFreeを紹介する記事です.
 
 ## Abstract
 
-Scalaコンパイラの末尾再帰除去は自分自身を呼び出すメソッドのみに限定されます
+Scalaコンパイラの末尾再帰除去は自分自身を呼び出すメソッドのみに限定されます.
 
-今回はどのような再帰呼び出しでもスタックを消費しないようにする方法を紹介します
+今回はどのような再帰呼び出しでもスタックを消費しないようにする方法を紹介します.
 
 ## Introduction
 
-`StackOverflowError`
+```scala
+java.lang.StackOverflowError
+```
 
-Scalaでプログラムを書いていると何回か経験があるでしょう
+Scalaでプログラムを書いていると何回か経験があるでしょう.
 
 ```scala
 val Zero = BigInt(0)
@@ -29,7 +31,7 @@ lazy val factorial: BigInt => BigInt = {
 }
 ```
 
-これは階乗の計算です
+これは階乗の計算です.
 
 ```scala
 scala> factorial(10000)
@@ -47,11 +49,11 @@ java.lang.StackOverflowError
         .
 ```
 
-大きな数を与えると,`StackOverflowError`が投げられます
+大きな数を与えると,`StackOverflowError`が投げられます.
 
 ## Background: Tail-call elimination in Scala
 
-末尾で自身を呼び出す関数`foldl`
+末尾で自身を呼び出す関数`foldl`は次のようになります.
 
 ```scala
 def foldl[A, B](as: List[A], b: B, f: (B, A) => B): B =
@@ -61,9 +63,9 @@ def foldl[A, B](as: List[A], b: B, f: (B, A) => B): B =
   }
 ```
 
-これは,`var`と`while`を使ったコードに機械的に変換可能です
+これは,`var`と`while`を使ったコードに機械的に変換可能です.
 
-コンパイルされたコードは以下と同等です
+コンパイルされたコードは以下と同等です.
 
 ```scala
 def foldl[A, B](as: List[A], b: B, f: (B, A) => B): B = {
@@ -82,7 +84,7 @@ def foldl[A, B](as: List[A], b: B, f: (B, A) => B): B = {
 }
 ```
 
-末尾呼び出しならなんでも最適化されるのか?
+末尾呼び出しならなんでも最適化されるのでしょうか?
 
 ```scala
 lazy val even: Int => Boolean = {
@@ -96,7 +98,7 @@ lazy val odd: Int => Boolean = {
 }
 ```
 
-これは`even`と`odd`を末尾で相互に呼び出しています
+これは`even`と`odd`を末尾で相互に呼び出しています.
 
 ```scala
 scala> even(100000)
@@ -112,13 +114,13 @@ java.lang.StackOverflowError
         .
 ```
 
-しかし,相互再帰では最適化が行われません
+しかし,相互再帰では最適化が行われません.
 
-これらの問題を解決するデータ構造が存在します
+これらの問題を解決するデータ構造が存在します.
 
 ## Tampolines: Trading stack for heap
 
-Trampoline
+`Trampoline`の定義は次のようになります.
 
 ```scala
 sealed trait Trampoline[+A] {
@@ -136,11 +138,11 @@ case class More[+A](k: () => Trampoline[A])
   extends Trampoline[A]
 ```
 
-`runT`は再帰的に次のステップを呼び出し,結果を得ます
+`runT`は再帰的に次のステップを呼び出し,結果を得ます.
 
-`runT`の呼び出しは末尾であり,最適化が可能です
+`runT`の呼び出しは末尾であり,最適化が可能です.
 
-`Trampoline`を用いた相互再帰は次のように書けます
+`Trampoline`を用いた相互再帰は次のように書けます.
 
 ```scala
 lazy val even: Int => Trampoline[Boolean] = {
@@ -165,7 +167,7 @@ res1: Boolean = true
 
 ## Making every call a tail cal
 
-最初に挙げた例を解決出来るか？
+最初に挙げた例を解決出来るでしょうか?
 
 ```scala
 val Zero = BigInt(0)
@@ -200,31 +202,31 @@ java.lang.StackOverflowError
         .
 ```
 
-関数内で`runT`を呼び出してしまっているため,スタックを消費しています
+関数内で`runT`を呼び出してしまっているため,スタックを消費しています.
 
 ### A Trampoline monad?
 
-`Trampoline`をモナドにすることで解決を試みます
+`Trampoline`をモナドにすることで解決を試みます.
 
-単純に実装すると
+単純に実装すると次のようになります.
 
 ```scala
 def flatMap[B](f: A => Trampoline[B]) =
   More(() => f(runT))
 ```
 
-しかし,`flatMap`内で`runT`を呼び出してしまうと先ほどと同じ結果になってしまいます
+しかし,`flatMap`内で`runT`を呼び出してしまうと先ほどと同じ結果になってしまいます.
 
 ### Building the monad right in
 
-ここでは`Trampoline`にコンストラクタを追加します
+ここでは`Trampoline`にコンストラクタを追加します.
 
 ```scala
 case class FlatMap[A, +B](sub: Trampoline[A], k: A => Trampoline[B])
   extends Trampoline[B]
 ```
 
-`flatMap`,`map`は次のように定義できます
+`flatMap`,`map`は次のように定義できます.
 
 ```scala
 def flatMap[B](f: A => Trampoline[B]): Trampoline[B] =
@@ -237,9 +239,9 @@ def map[B](f: A => B): Trampoline[B] =
   flatMap(a => Done(f(a)))
 ```
 
-構成子を追加したことで`runT`に変更を加える必要があります
+構成子を追加したことで`runT`に変更を加える必要があります.
 
-新しい`runT`は次に示す,`resume`メソッドによって定義されます
+新しい`runT`は次に示す,`resume`メソッドによって定義されます.
 
 ```scala
 final def resume: Either[() => Trampoline[A], A] =
@@ -254,11 +256,11 @@ final def resume: Either[() => Trampoline[A], A] =
   }
 ```
 
-`resume`メソッドは`FlatMap`を適用して結果か次のステップを返します
+`resume`メソッドは`FlatMap`を適用して結果か次のステップを返します.
 
-これはコンストラクタが`Done`と`More`の2つの時の`Trampoline`と同じです
+これはコンストラクタが`Done`と`More`の2つの時の`Trampoline`と同じです.
 
-よって,`runT`は以下の様に書くことが出来ます
+よって,`runT`は以下の様に書くことが出来ます.
 
 ```scala
 final def runT: A = resume match {
@@ -267,11 +269,11 @@ final def runT: A = resume match {
 }
 ```
 
-`resume`,`runT`は末尾で自身を呼び出しているので,このメソッドはコンパイラによって最適化されます
+`resume`,`runT`は末尾で自身を呼び出しているので,このメソッドはコンパイラによって最適化されます.
 
 ### Stackless Scala
 
-`flatMap`,`map`が定義されたことによって最初の例は次のようになります
+`flatMap`,`map`が定義されたことによって最初の例は次のようになります.
 
 ```scala
 val Zero = BigInt(0)
@@ -282,7 +284,7 @@ lazy val factorial: BigInt => Trampoline[BigInt] = {
 }
 ```
 
-もう一つ例を示します
+もう一つ例を示します.
 
 ```scala
 lazy val fib: Int => Int = {
@@ -291,9 +293,9 @@ lazy val fib: Int => Int = {
 }
 ```
 
-末尾で呼び出しているのは`+`のため,最適化が行われません
+末尾で呼び出しているのは`+`のため,最適化が行われません.
 
-Trampolineとfor式を用いると自然な形で記述することが出来ます
+Trampolineとfor式を用いると自然な形で記述することが出来ます.
 
 ```scala
 lazy val fib: Int => Trampoline[Int] = {
@@ -307,9 +309,9 @@ lazy val fib: Int => Trampoline[Int] = {
 
 ## Free Monads: A Generalization of Trampoline
 
-`Trampoline`は`Function0`を利用しています
+`Trampoline`は`Function0`を利用しています.
 
-この`Function0`の部分を抽象化すると次のような定義が可能です
+この`Function0`の部分を抽象化すると次のような定義が可能です.
 
 ```scala
 sealed trait Free[S[+_], +A] {
@@ -321,15 +323,15 @@ case class Done[S[+_], +A](a: A) extends Free[S, A]
 case class More[S[+_], +A](k: S[Free[S, A]]) extends Free[S, A]
 ```
 
-`Trampoline`は`Free`を用いて以下のように定義出来ます
+`Trampoline`は`Free`を用いて以下のように定義出来ます.
 
 ```scala
 type Trampoline[+A] = Free[Function0, A]
 ```
 
-`Function0`を抽象化したことによって,`resume`を変更する必要があります
+`Function0`を抽象化したことによって,`resume`を変更する必要があります.
 
-実は,`resume`は`Function0`を`Functor`として利用することで定義が可能です
+実は,`resume`は`Function0`を`Functor`として利用することで定義が可能です.
 
 ```scala
 trait Functor[F[_]] {
@@ -337,7 +339,7 @@ trait Functor[F[_]] {
 }
 ```
 
-`Function0Functor`は次のような定義になります
+`Function0Functor`は次のような定義になります.
 
 ```scala
 implicit val f0Functor =
@@ -349,7 +351,7 @@ implicit val f0Functor =
 
 ### Functions deﬁned on all free monads
 
-`resume`は`Functor`を利用して次のように定義出来ます
+`resume`は`Functor`を利用して次のように定義出来ます.
 
 ```scala
 final def resume(implicit S: Functor[S]): Either[S[Free[S, A]], A] =
@@ -366,9 +368,9 @@ final def resume(implicit S: Functor[S]): Either[S[Free[S, A]], A] =
 
 ### Common data types as free monads
 
-`Free`で表現出来るデータ型は`Trampoline`だけではありません
+`Free`で表現出来るデータ型は`Trampoline`だけではありません.
 
-`Free[S, A]`の`S`を枝,`A`を葉と見做すことで木構造を表現出来ます
+`Free[S, A]`の`S`を枝,`A`を葉と見做すことで木構造を表現出来ます.
 
 ```scala
 type Pair[+A] = (A, A)
@@ -376,17 +378,17 @@ type Pair[+A] = (A, A)
 type BinTree[+A] = Free[Pair, A]
 ```
 
-この場合は枝は`Tuple2`,葉は`A`で,二分木を表現しています
+この場合は枝は`Tuple2`,葉は`A`で,二分木を表現しています.
 
-`Pair`に対して2つの要素に関数を適用するような`Functor`を定義すれば,`BinTree`は全ての葉を走査するような`Monad`が定義されます
+`Pair`に対して2つの要素に関数を適用するような`Functor`を定義すれば,`BinTree`は全ての葉を走査するような`Monad`が定義されます.
 
 ### A free State monad
 
-最後に,`Free`を使ったプログラミングについて話します
+最後に,`Free`を使ったプログラミングについて話します.
 
-ここでは例として`State`を構築します
+ここでは例として`State`を構築します.
 
-まず最初に,枝となるデータ型を定義します
+まず最初に,枝となるデータ型を定義します.
 
 ```scala
 sealed trait StateF[S, +A]
@@ -398,9 +400,9 @@ case class Put[S, A](s: S, a: A)
   extends State[S, A]
 ```
 
-ここで大切なことは関数のモデルをcase class/object表現することです
+ここで大切なことは関数のモデルをcase class/object表現することです.
 
-次にFunctorを定義します
+次にFunctorを定義します.
 
 ```scala
 implicit def statefFun[S] =
@@ -413,16 +415,16 @@ implicit def statefFun[S] =
   }
 ```
 
-Functor則に気を付ければ自然と`map`を定義することが可能です
+Functor則に気を付ければ自然と`map`を定義することが可能です.
 
-`StateF`を使った`FreeState`の定義は以下のようになります
+`StateF`を使った`FreeState`の定義は以下のようになります.
 
 ```scala
 type FreeState[S, +A] =
   Free[({ type F[B] = StateF[S, B] })#F, A]
 ```
 
-`FreeState`を返す関数として,次のようなものが定義出来ます
+`FreeState`を返す関数として,次のようなものが定義出来ます.
 
 ```scala
 def pureState[S, A](a: A): FreeState[S, A] =
@@ -437,7 +439,7 @@ def setState[S](s: S): FreeState[S, Unit] =
     Put(s, Done[({ type F[+B] = StateF[S, B] })#F, Unit](())))
 ```
 
-そして,最初に定義した関数のモデルの実装は以下のように定義されます
+そして,最初に定義した関数のモデルの実装は以下のように定義されます.
 
 ```scala
 def evalS[S, A](s: S, t: FreeState[S, A]): A =
@@ -448,6 +450,6 @@ def evalS[S, A](s: S, t: FreeState[S, A]): A =
   }
 ```
 
-`evalS`は末尾で自身を呼び出しており、コンパイラによって最適化されます
+`evalS`は末尾で自身を呼び出しており、コンパイラによって最適化されます.
 
-このように,`resume`を使って計算を進めることでスタックを消費しない関数を定義することが可能です
+このように,`resume`を使って計算を進めることでスタックを消費しない関数を定義することが可能です.
