@@ -114,6 +114,15 @@ title: Scala Tips
     bar(foo)
     ```
 
+1. `this.type`で自身の型を相対的に指定できる.
+
+    ```scala
+    class Foo { type Hoge = this.type }
+    implicitly[Foo#Hoge =:= Foo]
+    class Bar extends Foo
+    implicitly[Bar#Hoge =:= Bar]
+    ```
+
 1. `final val`で宣言したリテラルをもつ参照を`type`で参照することで引数をそのリテラルに限定できる.
 
     ```scala
@@ -122,9 +131,10 @@ title: Scala Tips
     bar("foo")
     ```
 
-1. `implicit value`は`val`, `def`, `object`により定義できる.
+1. `implicit value`は`var`, `val`, `def`, `object`により定義できる.
 
     ```scala
+    implicit var hoge: Hoge = ???
     implicit val foo: Hoge = ???
     implicit def bar: Hoge = ???
     implicit object Baz extends Hoge
