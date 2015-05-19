@@ -56,7 +56,7 @@ type List[A] = Unit :+: (A :*: List[A] :*: Unit) :+: Void
 
 `Option`において`Unit`は`None`であり, `A :*: Unit`が`Some`であることがわかるだろう.
 
-しかし, 実際にはクラス名やフィールド名を判別する必要があり, 次のようなデータ型を導入する.
+しかし, 実際にはクラス名やフィールド名を判別する必要があるため, 次のようなデータ型を導入する.
 
 ```scala
 case class Meta[T, A](a: A)
@@ -83,9 +83,9 @@ class GenericMacros(val c: scala.reflect.macros.whitebox.Context) {
 
 マクロは複雑になりがちであり, ひとつのメソッドに定義するととても冗長なものになってしまう.そこで, クラスとして定義することでマクロの実装の見通しをよくする.
 
-マクロクラスは`Context`をコンストラクタの引数にとる.このクラスの呼び出しは`new`がいらないことに注意する.
+マクロを定義するクラスは`Context`をコンストラクタの引数にとる.このクラスの呼び出しは`new`がいらないことに注意する.
 
-`Generic`は`Rep`の型情報を返すために`whitebox`マクロでなければ実現できない.
+`Generic`は`Rep`の型情報を保存するために`whitebox`マクロでなければ実現できない.
 
 型パラメータの情報をとるためには`WeakTypeTag`を引数にとる.
 
@@ -110,6 +110,8 @@ new ${symbolOf[Generic[_]]}[$tpe] {
 
 `symbolOf`を使わず`tpe`から`sym`を定義しているのは`Symbol`を`ClassSymbol`に限定するためである.
 
+`Symbol`に対して`asClass`や`asMethod`を呼ぶことで`ClassSymbol`や`MethodSymbol`として扱える.
+
 型名を直接書かず`symbolOf`で埋め込むことで名前解決ができる.
 
 まずは`Rep`を導出する.
@@ -130,6 +132,8 @@ new ${symbolOf[Generic[_]]}[$tpe] {
   def parameters(ctor: ClassSymbol): List[Symbol] =
     ctor.primaryConstructor.asMethod.paramLists.head
 ```
+
+`primaryConstructor`によりクラスのコンストラクタを取得でき, `paramLists`によりその引数リストのリストを得る.
 
 `knownDirectSubclasses`は`sealed`なクラスの場合のみ取得が可能である.
 
@@ -157,6 +161,8 @@ new ${symbolOf[Generic[_]]}[$tpe] {
 
 `appliedType`により型引数を適用した`Type`を作れる.
 
+メソッドのパラメータから型情報を得るには`info`を使う.
+
 `substituteTypes`は`typeParams`を`typeArgs`で置き換える.
 
 `constantType`は`internal`以下に定義される.
@@ -182,6 +188,8 @@ new ${symbolOf[Generic[_]]}[$tpe] {
 
 `parameterTree`はコンストラクタにおいてはパラメータであり, エクストラクタにおいてはバインドパターンである.
 
+`Symbol`を直接埋め込まず, `name`を使っているのは型情報が`Symbol`に残りコンパイルエラーが発生するためである.
+
 `pq`を指定することでパターンのための`Tree`を作ることができる.
 
 `isModuleClass`により`case object`と引数がない`case class`を判別している.
@@ -196,7 +204,7 @@ new ${symbolOf[Generic[_]]}[$tpe] {
   val right = symbolOf[Right[_, _]].companion
 
   def sumTree(sym: ClassSymbol, isExpr: Boolean): List[Tree] =
-    constructors(sym).foldRight(List(q"${symbolOf[Void]}"))((a, b) => q"${left(${productTree(a, isExpr)})" :: b.map(x => q"$right($x)")).map(metaTree)
+    constructors(sym).foldRight(List(q"${symbolOf[Void].companion}"))((a, b) => q"${left(${productTree(a, isExpr)})" :: b.map(x => q"$right($x)")).map(metaTree)
 
   def productTree(ctor: ClassSymbol, isExpr: Boolean): Tree =
     metaTree(parameterTree(ctor, isExpr).foldRight(q"${symbolOf[Unit].companion}")((a, b) => q"${symbolOf[:*:[_, _]].companion}(${metaTree(a)}, $b)"))
@@ -269,7 +277,7 @@ new ${symbolOf[Generic[_]]}[$tpe] {
     constructors(sym).foldRight(List(q"${symbolOf[Void]}"))((a, b) => q"$left(${productTree(a, isExpr)})" :: b.map(x => q"$right($x)")).map(metaTree)
 
   def productTree(ctor: ClassSymbol, isExpr: Boolean): Tree =
-    metaTree(parameterTree(ctor, isExpr).foldRight(q"${symbolOf[Unit].companion}")((a, b) => q"${symbolOf[:*:[_, _]].companion}(${metaTree(a)}, $b)"))
+    metaTree(parameterTree(ctor, isExpr).foldRight(q"${symbolOf[Unit]}")((a, b) => q"${symbolOf[:*:[_, _]].companion}(${metaTree(a)}, $b)"))
 
   def metaTree(tree: Tree): Tree =
     q"${symbolOf[Meta[_, _]].companion}($tree)"
