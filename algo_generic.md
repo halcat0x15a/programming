@@ -21,6 +21,8 @@ Clojureの関数を総称的な関数として提供するライブラリです.
 
 簡単な例を見てみましょう.
 
+単純な四則演算です.
+
 ```clojure
 (refer-clojure :exculde [+ - * /])
 (require '[clojure.algo.generic.arithmetic :refer (+ - * /)])
@@ -30,8 +32,6 @@ Clojureの関数を総称的な関数として提供するライブラリです.
 (assert (= (* 1 2) 2))
 (assert (= (/ 1 2) 1/2))
 ```
-
-単純な四則演算です.
 
 java.lang.Numberに対してはclojure.coreの関数と変わりない動作をします.
 

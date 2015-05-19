@@ -153,6 +153,13 @@ title: Scala Tips
     implicit def foo(implicit hoge: Hoge): Foo = ???
     ```
 
+1. 型引数に対して暗黙的に`implicit parameter`を追加できる.
+
+    ```scala
+    def foo[A: Foo](a: A) = ???
+    // def foo[A](a: A)(implicit ev: Foo[A]) = ???
+    ```
+
 1. `implicit parameter`はコンパニオンオブジェクトから探索される.
 
     ```scala

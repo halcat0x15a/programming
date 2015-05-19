@@ -11,8 +11,8 @@ title: Codensity in Scala
 
 ```scala
 sealed trait Tree[A]
-case class Leaf[A](lazy val value: A) extends Tree[A]
-case class Node[A](left: => Tree[A], right: => Tree[A]) extends Tree[A]
+case class Leaf[A](value: A) extends Tree[A]
+case class Node[A](left: Tree[A], right: Tree[A]) extends Tree[A]
 ```
 
 `Tree`を`Leaf`の値を使って置換するような関数は次のようになる.
