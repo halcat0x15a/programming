@@ -1,9 +1,9 @@
 ---
 layout: default
-title: Hello world
+title: Hello, world!
 ---
 
-# Hello world
+# Hello, world!
 
 ## C
 
@@ -12,17 +12,6 @@ title: Hello world
 
 int main() {
   puts("Hello, world!");
-  return 0;
-}
-```
-
-## C++
-
-```cpp
-#include <iostream>
-
-int main() {
-  std::cout << "Hello, world!" << std::endl;
   return 0;
 }
 ```
@@ -39,6 +28,17 @@ func main() {
 }
 ```
 
+## C++
+
+```cpp
+#include <iostream>
+
+int main() {
+  std::cout << "Hello, world!" << std::endl;
+  return 0;
+}
+```
+
 ## Java
 
 ```java
@@ -49,9 +49,9 @@ public class HelloWorld {
 }
 ```
 
-## C#
+## C&#35;
 
-```cs
+```csharp
 class HelloWorld
 {
     static void Main()
@@ -99,7 +99,7 @@ puts "Hello, world!"
 echo "Hello, world!"
 ```
 
-# FizzBuzz
+# Fizz Buzz
 
 ## C
 
@@ -124,29 +124,6 @@ int main() {
     fizzbuzz(i, buf);
     puts(buf);
   }
-  return 0;
-}
-```
-
-## C++
-
-```cpp
-#include <iostream>
-
-std::string fizzbuzz(int n) {
-  if (n % 15 == 0)
-    return "FizzBuzz";
-  else if (n % 3 == 0)
-    return "Fizz";
-  else if (n % 5 == 0)
-    return "Buzz";
-  else
-    return std::to_string(n);
-}
-
-int main() {
-  for (int i = 1; i <= 100; i++)
-    std::cout << fizzbuzz(i) << std::endl;
   return 0;
 }
 ```
@@ -178,6 +155,29 @@ func main() {
 }
 ```
 
+## C++
+
+```cpp
+#include <iostream>
+
+std::string fizzbuzz(int n) {
+  if (n % 15 == 0)
+    return "FizzBuzz";
+  else if (n % 3 == 0)
+    return "Fizz";
+  else if (n % 5 == 0)
+    return "Buzz";
+  else
+    return std::to_string(n);
+}
+
+int main() {
+  for (int i = 1; i <= 100; i++)
+    std::cout << fizzbuzz(i) << std::endl;
+  return 0;
+}
+```
+
 ## Java
 
 ```java
@@ -203,9 +203,9 @@ public class FizzBuzz {
 }
 ```
 
-## C#
+## C&#35;
 
-```cs
+```csharp
 using System.Linq;
 
 class FizzBuzzMain
@@ -261,8 +261,8 @@ import Control.Monad (forM_)
 fizzbuzz :: Int -> String
 fizzbuzz n =
   | n `mod` 15 == 0 = "FizzBuzz"
-  | n `mod` 3 == 0  = "Fizz"
-  | n `mod` 5 == 0  = "Buzz"
+  | n `mod`  3 == 0 = "Fizz"
+  | n `mod`  5 == 0 = "Buzz"
   | otherwise       = show n
 
 main :: IO ()
@@ -372,27 +372,6 @@ int main() {
 }
 ```
 
-## C++
-
-```cpp
-#include <vector>
-#include <iostream>
-
-std::vector<long> fib(int n) {
-  std::vector<long> buf{0, 1};
-  for (int i = 2; i < n; i++)
-    buf.push_back(buf[i - 1] + buf[i - 2]);
-  return buf;
-}
-
-int main() {
-  auto buf = fib(50);
-  for (auto n = buf.begin(); n != buf.end(); n++)
-    std::cout << *n << std::endl;
-  return 0;
-}
-```
-
 ## Go
 
 ```go
@@ -416,6 +395,27 @@ func main() {
   for _, n := range fib(100) {
     fmt.Println(n)
   }
+}
+```
+
+## C++
+
+```cpp
+#include <vector>
+#include <iostream>
+
+std::vector<long> fib(int n) {
+  std::vector<long> buf{0, 1};
+  for (int i = 2; i < n; i++)
+    buf.push_back(buf[i - 1] + buf[i - 2]);
+  return buf;
+}
+
+int main() {
+  auto buf = fib(50);
+  for (auto n = buf.begin(); n != buf.end(); n++)
+    std::cout << *n << std::endl;
+  return 0;
 }
 ```
 
@@ -443,9 +443,9 @@ public class Fib {
 }
 ```
 
-## C#
+## C&#35;
 
-```cs
+```csharp
 using System.Numerics;
 using System.Linq;
 using System.Collections.Generic;
