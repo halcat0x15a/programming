@@ -19,7 +19,7 @@ Scalaコンパイラの末尾再帰除去は自分自身を呼び出すメソッ
 java.lang.StackOverflowError
 ```
 
-Scalaでプログラムを書いていると何回か経験があるでしょう.
+Scalaでプログラムを書いていると何回か経験があることでしょう.
 
 ```scala
 val Zero = BigInt(0)
@@ -49,7 +49,7 @@ java.lang.StackOverflowError
         .
 ```
 
-大きな数を与えると,`StackOverflowError`が投げられます.
+大きな数を与えると`StackOverflowError`が投げられます.
 
 ## Background: Tail-call elimination in Scala
 
@@ -63,7 +63,7 @@ def foldl[A, B](as: List[A], b: B, f: (B, A) => B): B =
   }
 ```
 
-これは,`var`と`while`を使ったコードに機械的に変換可能です.
+これは`var`と`while`を使ったコードに機械的に変換可能です.
 
 コンパイルされたコードは以下と同等です.
 

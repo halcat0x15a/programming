@@ -3,7 +3,7 @@ layout: default
 title: clojure.zip
 ---
 
-# clojure.zipを使った履歴の表現
+# clojure.zip
 
 ## スタックを使った履歴
 

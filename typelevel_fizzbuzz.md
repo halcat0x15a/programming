@@ -5,13 +5,11 @@ title: Typelevel FizzBuzz in Scala
 
 # Typelevel FizzBuzz in Scala
 
-Scalaの型レベルプログラミングをFizzBuzzで解説する.
+Scalaの型レベルプログラミングをFizzBuzzにより解説する.
 
 ## 型レベルプログラミング
 
-型で計算を行う手法のこと.
-
-以下の利点がある.
+型で計算を行う手法のことで, 以下の利点がある.
 
 * コンパイル時計算
 * 型システムによる計算の保証

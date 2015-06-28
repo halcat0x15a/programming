@@ -9,7 +9,11 @@ title: Continuations and for-comprehension
 
 ```scala
 def f = shift { (k: Int => Int) => k(1) }
+```
 
+この例では`k`が継続です.
+
+```scala
 reset {
   val x = f
   println(x)
@@ -17,14 +21,10 @@ reset {
 }
 ```
 
-よくある限定継続の例です.
-
-`k`が継続です.
-
 ではこの場合の継続の実体は?
 
 ```scala
-{ (x: Int) =>
+val k: Int => Int = { x =>
   println(x)
   x + 2
 }
@@ -32,7 +32,7 @@ reset {
 
 `shift`の呼び出しから`reset`の終わりまでです.
 
-`shift`の中で継続に`1`を渡しているので結果は`3`,標準出力に`1`が出力されます.
+`shift`の中で継続に`1`を渡しているので結果は`3`,標準入出力に`1`が出力されます.
 
 ## 継続渡し形式
 
@@ -49,11 +49,9 @@ f { x =>
 
 継続をとって`1`を渡すという`f`の性質は変わりません.
 
-ただ,継続の渡し方が変わっただけです.
-
 ## 継続の応用
 
-こんな例ではいまいちうれしさがわからないので実用的なものを作りましょう.
+この例ではまだうれしさがわからないので, もう少し実践的なものを作りましょう.
 
 ```scala
 def check[A](a: A) = shift { (k: A => Any) =>
@@ -75,9 +73,9 @@ reset {
 
 この例では`check`によりファイルが存在しない場合は継続が*破棄*され出力が行われません.
 
-もうひとつ例です.
+もうひとつ例を紹介します.
 
-Pythonのジェネレータを再現します.
+これはPythonのジェネレータを再現しています.
 
 ```scala
 def yields[A](value: A): Unit @cps[Stream[A]] = shift { (k: Unit => Stream[A]) =>
@@ -92,7 +90,7 @@ def generator[A](f: => Unit @cps[Stream[A]]) = reset {
 
 継続の評価を`Stream`によって*遅延*しています.
 
-以下使用例.
+以下は使用例です.
 
 ```scala
 scala> val gen = generator {
@@ -134,8 +132,6 @@ for (sbt <- Option(getClass.getResource("/build.sbt"))) {
 ```
 
 このプログラムも先の例と同様に,ファイルが存在しない場合は出力が行われません.
-
-しかし,ファイルが存在しない場合でも`None#map`に継続を渡しているため,限定継続で記述したプログラムの方が僅かに効率が良いです.
 
 以下は`Generator`モナドとその使用例です.
 

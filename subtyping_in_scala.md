@@ -89,7 +89,7 @@ implicitly[String <:< Any]
 implicitly[(Any => java.lang.Long) <:< (String => Number)]
 ```
 
-引数が反変であることでより広い値域をもつ関数がとれる.
+引数が反変であることでより広い定義域をもつ関数をとることができ, 引数が共変であることでより狭い値域をもつ関数をとることができる.
 
 ### Use Site
 

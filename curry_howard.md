@@ -15,7 +15,7 @@ A => B                  | A ならば B
 A with B                | A かつ B
 P[A] forSome { type A } | P[A] である A が存在する
 
-真偽と型の対応は`Any`が全体集合で`Nothing`が空集合であることからもわかる.
+`Any`は全ての型のスーパータイプで, `Nothing`は全ての型のサブタイプである.
 
 また, 型の包含関係は次のように記述できる.
 
@@ -42,7 +42,7 @@ A   | B   | A => B
 1   | 0   | 0
 1   | 1   | 1
 
-Bが0のところに注目すると否定の形になっていることがわかる.
+また, Scalaの型システムにおいて`Not[Not[A]] =:= A`が成り立たないことに注意したい.
 
 # 合併型
 
@@ -58,9 +58,7 @@ type Or[A, B] = Not[Not[A] with Not[B]]
 org.scalacheck.Prop.forAll((a: Boolean, b: Boolean) => (a || b) == !(!a && !b)).check
 ```
 
-ただしこの定義では二重否定が使われており,`Not[Not[A]] =:= A`が成り立たないことに注意したい.
-
-この合併型は次のように使うことができる.
+合併型は次のように使うことができる.
 
 ```scala
 def double[A](a: A)(implicit ev: Not[Not[A]] <:< Or[Int, String]): String =
@@ -120,6 +118,8 @@ def opt2list: Forall[({ type F[A] = Option[A] => List[A] })#F] = k => k(_.toList
 
 def list2opt: Forall[({ type F[A] = List[A] => Option[A] })#F] = k => k(_.headOption)
 ```
+
+これらの関数における`k`が継続を表す.
 
 利用する際には二重否定を除去する必要がある.
 

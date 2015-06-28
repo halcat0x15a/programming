@@ -3,7 +3,7 @@ layout: default
 title: Generic macros in Scala
 ---
 
-# Generic
+# Generic macros in Scala
 
 `GHC.Generics`をScalaに導入する.
 
@@ -56,18 +56,6 @@ type List[A] = Unit :+: (A :*: List[A] :*: Unit) :+: Void
 
 `Option`において`Unit`は`None`であり, `A :*: Unit`が`Some`であることがわかるだろう.
 
-しかし, 実際にはクラス名やフィールド名を判別する必要があるため, 次のようなデータ型を導入する.
-
-```scala
-case class Meta[T, A](a: A)
-```
-
-これを導入すると`Option`は次のような型になる.
-
-```scala
-type Option[A] = Meta[String("Option"), Meta[String("None"), Unit] :+: Meta[String("Some"), Meta[String("x"), A] :*: Unit] :+: Void]
-```
-
 これらのデータ型を利用し, Genericのインスタンスをマクロによりデータ型から導出する.
 
 ```scala
@@ -96,19 +84,19 @@ class GenericMacros(val c: scala.reflect.macros.whitebox.Context) {
     val tpe = weakTypeOf[A]
     val sym = tpe.typeSymbol.asClass
     val rep = sumType(sym, tpe)
-    val from = exprs(sym, false)
-    val to = exprs(sym, true)
+    val from = cases(sym, false)
+    val to = cases(sym, true)
     q"""
 new ${symbolOf[Generic[_]]}[$tpe] {
   type Rep = $rep
   def from(a: $tpe): Rep = a match { case ..$from }
-  def to(r: Rep): $tpe = r match { case ..$to }
+  def to(r: Rep): $tpe = (r: @${typeOf[unchecked]}) match { case ..$to }
 }
 """
   }
 ```
 
-`symbolOf`を使わず`tpe`から`sym`を定義しているのは`Symbol`を`ClassSymbol`に限定するためである.
+`symbolOf`を使わず`tpe`から`sym`を定義しているのは`Symbol`を`ClassSymbol`に限定するためである.もし`A`が`type`で宣言されている場合に, `symbolOf`で`Symbol`を取得すると`TypeSymbol`が返る.
 
 `Symbol`に対して`asClass`や`asMethod`を呼ぶことで`ClassSymbol`や`MethodSymbol`として扱える.
 
@@ -144,19 +132,11 @@ new ${symbolOf[Generic[_]]}[$tpe] {
 `sumType`の実装は次のようになる.
 
 ```scala
-  import internal._
-
   def sumType(sym: ClassSymbol, tpe: Type): Type =
-    metaType(sym, constructors(sym).map(productType(_, tpe)).foldRight(typeOf[Void])(appliedType(typeOf[:+:[_, _]], _, _)))
+    constructors(sym).map(productType(_, tpe)).foldRight(typeOf[Void])(appliedType(typeOf[:+:[_, _]], _, _))
 
   def productType(sym: ClassSymbol, tpe: Type): Type =
-    metaType(sym, parameterTypes(sym, tpe).foldRight(typeOf[Unit])(appliedType(typeOf[:*:[_, _]], _, _)))
-
-  def parameterTypes(sym: ClassSymbol, tpe: Type): List[Type] =
-    parameters(sym).map(param => metaType(param, param.info.substituteTypes(sym.typeParams, tpe.typeArgs)))
-
-  def metaType(sym: Symbol, tpe: Type): Type =
-    appliedType(typeOf[Meta[_, _]], constantType(Constant(sym.name.decodedName.toString)), tpe)
+    parameters(sym).map(_.info.substituteTypes(sym.typeParams, tpe.typeArgs)).foldRight(typeOf[Unit])(appliedType(typeOf[:*:[_, _]], _, _))
 ```
 
 `appliedType`により型引数を適用した`Type`を作れる.
@@ -164,10 +144,6 @@ new ${symbolOf[Generic[_]]}[$tpe] {
 メソッドのパラメータから型情報を得るには`info`を使う.
 
 `substituteTypes`は`typeParams`を`typeArgs`で置き換える.
-
-`constantType`は`internal`以下に定義される.
-
-`decodedName`を指定することで`$colon$colon`のようなクラス名を`::`へ直す.
 
 次に`from`と`to`を実装するため, `Generic`が定義されるデータ型のコンストラクタとエクストラクタの`Tree`を構築する.
 
@@ -179,9 +155,9 @@ new ${symbolOf[Generic[_]]}[$tpe] {
       else
         q"${ctor.companion}(..${parameterTree(ctor, isExpr)})"
 
-  def parameterTree(ctor: ClassSymbol, isExpr: Boolean): List[Tree] =
+  def parameterTree(sym: ClassSymbol, isExpr: Boolean): List[Tree] =
     for {
-      param <- parameters(ctor)
+      param <- parameters(sym)
       name = param.asTerm.name
     } yield if (isExpr) q"$name" else pq"$name@_"
 ```
@@ -199,24 +175,21 @@ new ${symbolOf[Generic[_]]}[$tpe] {
 次に総称的な型のコンストラクタとエクストラクタの`Tree`を構築する.
 
 ```scala
-  val left = symbolOf[Left[_, _]].companion
-
-  val right = symbolOf[Right[_, _]].companion
-
   def sumTree(sym: ClassSymbol, isExpr: Boolean): List[Tree] =
-    constructors(sym).foldRight(List(q"${symbolOf[Void].companion}"))((a, b) => q"${left(${productTree(a, isExpr)})" :: b.map(x => q"$right($x)")).map(metaTree)
+    constructors(sym).foldRight(List(q"${symbolOf[Void].companion}")) { (a, b) =>
+      q"${symbolOf[Left[_, _]].companion}(${productTree(a, isExpr)})" :: b.map(x => q"${symbolOf[Right[_, _]].companion}($x)")
+    }
 
-  def productTree(ctor: ClassSymbol, isExpr: Boolean): Tree =
-    metaTree(parameterTree(ctor, isExpr).foldRight(q"${symbolOf[Unit].companion}")((a, b) => q"${symbolOf[:*:[_, _]].companion}(${metaTree(a)}, $b)"))
-
-  def metaTree(tree: Tree): Tree =
-    q"${symbolOf[Meta[_, _]].companion}($tree)"
+  def productTree(sym: ClassSymbol, isExpr: Boolean): Tree =
+    parameterTree(sym, isExpr).foldRight(q"${symbolOf[Unit].companion}") { (a, b) =>
+      q"${symbolOf[:*:[_, _]].companion}($a, $b)"
+    }
 ```
 
 これらの関数からパターンマッチのケース節を構築する.
 
 ```scala
-  def exprs(sym: ClassSymbol, isExpr: Boolean): List[Tree] =
+  def cases(sym: ClassSymbol, isExpr: Boolean): List[Tree] =
     for ((a, r) <- constructorTree(sym, isExpr).zip(sumTree(sym, !isExpr))) yield
       if (isExpr)
         cq"$r => $a"
@@ -227,86 +200,3 @@ new ${symbolOf[Generic[_]]}[$tpe] {
 `cq`によりケース節のための`Tree`を作ることができる.
 
 これにより`GenericMacros`が完成した.
-
-全コードを示す.
-
-```scala
-class GenericMacros(val c: scala.reflect.macros.whitebox.Context) {
-
-  import c.universe._, internal._
-
-  val left = symbolOf[Left[_, _]].companion
-
-  val right = symbolOf[Right[_, _]].companion
-
-  def apply[A: c.WeakTypeTag]: Tree = {
-    val tpe = weakTypeOf[A]
-    val sym = tpe.typeSymbol.asClass
-    val rep = sumType(sym, tpe)
-    val from = exprs(sym, false)
-    val to = exprs(sym, true)
-    q"""
-new ${symbolOf[Generic[_]]}[$tpe] {
-  type Rep = $rep
-  def from(a: $tpe): Rep = a match { case ..$from }
-  def to(r: Rep): $tpe = r match { case ..$to }
-}
-"""
-  }
-
-  def exprs(sym: ClassSymbol, isExpr: Boolean): List[Tree] =
-    for ((a, r) <- constructorTree(sym, isExpr).zip(sumTree(sym, !isExpr))) yield
-      if (isExpr)
-        cq"$r => $a"
-      else
-        cq"$a => $r"
-
-  def sumType(sym: ClassSymbol, tpe: Type): Type =
-    metaType(sym, constructors(sym).map(productType(_, tpe)).foldRight(typeOf[Void])(appliedType(typeOf[:+:[_, _]], _, _)))
-
-  def productType(sym: ClassSymbol, tpe: Type): Type =
-    metaType(sym, parameterTypes(sym, tpe).foldRight(typeOf[Unit])(appliedType(typeOf[:*:[_, _]], _, _)))
-
-  def parameterTypes(sym: ClassSymbol, tpe: Type): List[Type] =
-    parameters(sym).map(param => metaType(param, param.info.substituteTypes(sym.typeParams, tpe.typeArgs)))
-
-  def metaType(sym: Symbol, tpe: Type): Type =
-    appliedType(typeOf[Meta[_, _]], constantType(Constant(sym.name.decodedName.toString)), tpe)
-
-  def sumTree(sym: ClassSymbol, isExpr: Boolean): List[Tree] =
-    constructors(sym).foldRight(List(q"${symbolOf[Void]}"))((a, b) => q"$left(${productTree(a, isExpr)})" :: b.map(x => q"$right($x)")).map(metaTree)
-
-  def productTree(ctor: ClassSymbol, isExpr: Boolean): Tree =
-    metaTree(parameterTree(ctor, isExpr).foldRight(q"${symbolOf[Unit]}")((a, b) => q"${symbolOf[:*:[_, _]].companion}(${metaTree(a)}, $b)"))
-
-  def metaTree(tree: Tree): Tree =
-    q"${symbolOf[Meta[_, _]].companion}($tree)"
-
-  def constructorTree(sym: ClassSymbol, isExpr: Boolean): List[Tree] =
-    for (ctor <- constructors(sym)) yield
-      if (ctor.isModuleClass)
-        q"${ctor.module}"
-      else
-        q"${ctor.companion}(..${parameterTree(ctor, isExpr)})"
-
-  def parameterTree(ctor: ClassSymbol, isExpr: Boolean): List[Tree] =
-    for {
-      param <- parameters(ctor)
-      name = param.asTerm.name
-    } yield if (isExpr) q"$name" else pq"$name@_"
-
-  def constructors(sym: ClassSymbol): List[ClassSymbol] = {
-    sym.typeSignature
-    if (sym.isSealed)
-      sym.knownDirectSubclasses.toList.flatMap(sym => constructors(sym.asClass))
-    else if (sym.isCaseClass)
-      List(sym)
-    else
-      Nil
-  }
-
-  def parameters(ctor: ClassSymbol): List[Symbol] =
-    ctor.primaryConstructor.asMethod.paramLists.head
-
-}
-```
