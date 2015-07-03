@@ -413,8 +413,8 @@ std::vector<long> fib(int n) {
 
 int main() {
   auto buf = fib(50);
-  for (auto n = buf.begin(); n != buf.end(); n++)
-    std::cout << *n << std::endl;
+  for (auto n : buf)
+    std::cout << n << std::endl;
   return 0;
 }
 ```
@@ -475,8 +475,7 @@ class Fib
 ```scala
 object Main extends App {
 
-  lazy val fib: Stream[BigInt] =
-    Stream.cons(BigInt(0), Stream.cons(BigInt(1), fib.zip(fib.tail).map { case (x, y) => x + y }))
+  val fib: Stream[BigInt] = BigInt(0) #:: fib.scanLeft(BigInt(1))(_ + _)
 
   fib.take(100).foreach(println)
 

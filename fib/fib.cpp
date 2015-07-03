@@ -10,7 +10,7 @@ std::vector<long> fib(int n) {
 
 int main() {
   auto buf = fib(50);
-  for (auto n = buf.begin(); n != buf.end(); n++)
-    std::cout << *n << std::endl;
+  for (auto n : buf)
+    std::cout << n << std::endl;
   return 0;
 }
