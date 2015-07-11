@@ -790,20 +790,26 @@ class Nil<T> : List<T>
 sealed trait List[+A] {
 
   final def apply(n: Int): Option[A] =
+    foldLeft((None: Option[A], n)) {
+      case ((None, n), value) if n <= 0 => (Some(value), n)
+      case ((result, n), _) => (result, n - 1)
+    }._1
+
+  final def append[B >: A](list: List[B]): List[B] =
     this match {
-      case Nil => None
-      case Cons(head, tail) =>
-        if (n <= 0)
-          Some(head)
-        else
-          tail(n - 1)
+      case Nil => list
+      case Cons(head, tail) => Cons(head, tail.append(list))
     }
 
-  final def size: Int =
+  final def foldLeft[B](b: B)(f: (B, A) => B): B =
     this match {
-      case Cons(_, tail) => 1 + tail.size
-      case Nil => 0
+      case Cons(head, tail) => tail.foldLeft(f(b, head))(f)
+      case Nil => b
     }
+
+  final def size: Int = foldLeft(0)((n, _) => n + 1)
+
+  final def reverse: List[A] = foldLeft(Nil: List[A])((tail, head) => Cons(head, tail))
 
 }
 
@@ -822,19 +828,30 @@ case object Nil extends List[Nothing]
 ## Haskell
 
 ```hs
-data List a = Nil | Cons a (List a)
+data List a = Nil | Cons a (List a) deriving Eq
+
+foldLeft :: b -> (b -> a -> b) -> List a -> b
+foldLeft b _ Nil = b
+foldLeft b f (Cons h t) = foldLeft (f b h) f t
 
 size :: List a -> Int
-size Nil = 0
-size (Cons _ tail) = 1 + size tail
+size = foldLeft 0 (\n -> const (n + 1))
 
 nth :: Int -> List a -> Maybe a
-nth _ Nil = Nothing
-nth n (Cons head tail) =
-  if n <= 0 then
-    Just head
-  else
-    nth (n - 1) tail
+nth n = fst . foldLeft (Nothing, n) f
+  where
+    f (Nothing, n) value | n <= 0 = (Just value, n - 1)
+    f (result, n) _ = (result, n - 1)
+
+reversed :: List a -> List a
+reversed = foldLeft Nil (flip Cons)
+
+append :: List a -> List a -> List a
+append Nil list = list
+append (Cons head tail) list = Cons head (append tail list)
+
+list :: [a] -> List a
+list = foldr Cons Nil
 ```
 
 ## Perl
@@ -881,77 +898,110 @@ sub get {
 ## Python
 
 ```py
-class Nil:
-
-    def __len__(self):
-        return 0
+class List:
 
     def __getitem__(self, n):
-        return None
+        return reduce(lambda (result, n), value: (result or value, n - 1) if n <= 0 else (result, n - 1), self, (None, n))[0]
 
-class Cons:
+    def __len__(self):
+        return reduce(lambda n, _: n + 1, self, 0)
+
+    def reverse(self):
+        return reduce(lambda tail, head: Cons(head, tail), self, Nil())
+
+    @staticmethod
+    def create(*values):
+        return reduce(lambda acc, head: lambda k: acc(lambda tail: Cons(head, k(tail))), values, lambda k: k(Nil()))(lambda x: x)
+
+class Nil(List):
+
+    def __add__(self, other):
+        return other
+
+    def __eq__(self, other):
+        return isinstance(other, Nil)
+
+    def __iter__(self):
+        raise StopIteration()
+
+class Cons(List):
 
     def __init__(self, head, tail):
         self.head = head
         self.tail = tail
 
-    def __len__(self):
-        return 1 + len(self.tail)
+    def __add__(self, other):
+        return Cons(self.head, self.tail + other)
 
-    def __getitem__(self, n):
-        if n == 0:
-            return self.head
-        else:
-            return self.tail[n - 1]
+    def __eq__(self, other):
+        return isinstance(other, Cons) and self.head == other.head and self.tail == other.tail
 
-def create(*values):
-    return reduce(lambda acc, head: lambda k: acc(lambda tail: Cons(head, k(tail))), values, lambda k: k(Nil()))(lambda x: x)
+    def __iter__(self):
+        yield self.head
+        for value in self.tail:
+            yield value
 ```
 
 ## Ruby
 
 ```rb
-module List
+class List
+
+  include Enumerable
+
+  def reverse
+    inject(Nil.new) { |tail, head| Cons.new(head, tail) }
+  end
+
+  def [](n)
+    inject([nil, n]) { |acc, value| if acc[1] <= 0 then [acc[0] || value, acc[1] - 1] else [acc[0], acc[1] - 1] end }[0]
+  end
 
   def self.create(*values)
-    values.inject(->(k) { k.call(Nil.new) }) { |tail, head|
-      ->(k)
-        tail.call(->(tail) { Cons.new(head, k.call(tail)) })
+    values.inject(->(k) { k.call(Nil.new) }) { |acc, head|
+      ->(k) {
+        acc.call(->(tail) { Cons.new(head, k.call(tail)) })
       }
     }.call(->(x) { x })
   end
 
-  class Nil
+end
 
-    def [](n)
-      nil
-    end
+class Nil < List
 
-    def size
-      0
-    end
-
+  def +(list)
+    list
   end
 
-  class Cons
+  def ==(list)
+    list.is_a?(Nil)
+  end
 
-    def initialize(head, tail)
-      @head = head
-      @tail = tail
-    end
+  def each(&block)
+  end
 
-    def [](n)
-      if n == 0
-        @head
-      else
-        @tail[n - 1]
-      end
-    end
+end
 
-    def size
-      1 + @tail.size
-    end
+class Cons < List
 
+  attr_reader :head, :tail
+
+  def initialize(head, tail)
+    @head = head
+    @tail = tail
+  end
+
+  def +(list)
+    Cons.new(@head, @tail + list)
+  end
+
+  def ==(list)
+    list.is_a?(Cons) && @head == list.head && @tail == list.tail
+  end
+
+  def each(&block)
+    block.call(@head)
+    @tail.each { |x| block.call(x) }
   end
 
 end

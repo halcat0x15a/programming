@@ -1,20 +1,26 @@
 sealed trait List[+A] {
 
   final def apply(n: Int): Option[A] =
+    foldLeft((None: Option[A], n)) {
+      case ((None, n), value) if n <= 0 => (Some(value), n)
+      case ((result, n), _) => (result, n - 1)
+    }._1
+
+  final def append[B >: A](list: List[B]): List[B] =
     this match {
-      case Nil => None
-      case Cons(head, tail) =>
-        if (n <= 0)
-          Some(head)
-        else
-          tail(n - 1)
+      case Nil => list
+      case Cons(head, tail) => Cons(head, tail.append(list))
     }
 
-  final def size: Int =
+  final def foldLeft[B](b: B)(f: (B, A) => B): B =
     this match {
-      case Cons(_, tail) => 1 + tail.size
-      case Nil => 0
+      case Cons(head, tail) => tail.foldLeft(f(b, head))(f)
+      case Nil => b
     }
+
+  final def size: Int = foldLeft(0)((n, _) => n + 1)
+
+  final def reverse: List[A] = foldLeft(Nil: List[A])((tail, head) => Cons(head, tail))
 
 }
 
@@ -35,4 +41,6 @@ object Main extends App {
   assert(foo(1) == Some(1))
   assert(foo(2) == Some(2))
   assert(foo(3) == None)
+  assert(foo.append(foo) == List(0, 1, 2, 0, 1, 2))
+  assert(foo.reverse == List(2, 1, 0))
 }

@@ -1,5 +1,7 @@
 #include <cassert>
 #include <experimental/optional>
+#include <vector>
+#include <numeric>
 
 template <typename T>
 class List {
@@ -13,10 +15,7 @@ class Cons : public List<T> {
   T head;
   List<T> *tail;
 public:
-  Cons(T h, List<T> *t) {
-    head = h;
-    tail = t;
-  }
+  Cons(T h, List<T> *t) : head(h), tail(t) {}
   int size() {
     return 1 + tail->size();
   }
@@ -40,8 +39,13 @@ public:
   }
 };
 
+template <typename T>
+List<T> *list(std::vector<T> values) {
+  return std::accumulate(values.rbegin(), values.rend(), (List<T> *) new Nil<T>, [](List<T> *acc, T value) { return new Cons<T>(value, acc); });
+}
+
 int main() {
-  auto foo = new Cons<int>(0, new Cons<int>(1, new Cons<int>(2, new Nil<int>)));
+  auto foo = list<int>({0, 1, 2});
   assert(foo->size() == 3);
   assert((*foo)[1] == 1);
   assert((*foo)[2] == 2);
