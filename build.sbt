@@ -21,11 +21,14 @@ libraryDependencies ++= Seq(
   "com.chuusai" %% "shapeless" % "2.0.0",
   "org.scalacheck" %% "scalacheck" % "1.11.6",
   "org.scalatest" %% "scalatest" % "2.2.1" % "test",
-  "org.openjdk.jmh" % "jmh-core" % "1.5"
-    
+  "com.twitter" %% "finagle-http" % "6.24.0",
+  "org.openjdk.jmh" % "jmh-core" % "1.5",
+  "org.halcat" %% "kits" % "0.3.1"
 )
 
 scalacOptions in ThisBuild ++= Seq(
   "-deprecation",
   "-feature"
 )
+
+fork in run := true

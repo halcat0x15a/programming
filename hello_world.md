@@ -564,6 +564,7 @@ fib 50
 ## C
 
 ```c
+#include <stdio.h>
 #include <stdlib.h>
 
 struct cons {
@@ -571,15 +572,22 @@ struct cons {
   struct cons *tail;
 };
 
+struct cons *cons(int head, struct cons *tail) {
+  struct cons *list = malloc(sizeof(struct cons));
+  list->head = head;
+  list->tail = tail;
+  return list;
+}
+
 int size(struct cons *list) {
-  if (list == NULL)
-    return 0;
-  else
+  if (list)
     return 1 + size(list->tail);
+  else
+    return 0;
 }
 
 int nth(int n, struct cons *list) {
-  if (list == NULL)
+  if (!list)
     return -1;
   else if (n == 0)
     return list->head;
@@ -587,11 +595,25 @@ int nth(int n, struct cons *list) {
     return nth(n - 1, list->tail);
 }
 
-struct cons *cons(int head, struct cons *tail) {
-  struct cons *list = malloc(sizeof(struct cons));
-  list->head = head;
-  list->tail = tail;
-  return list;
+struct cons *append(struct cons *xs, struct cons *ys) {
+  if (xs)
+    return cons(xs->head, append(xs->tail, ys));
+  else
+    return ys;
+}
+
+struct cons *reverse(struct cons *list) {
+  struct cons *ys = NULL;
+  struct cons *xs = list;
+  while (xs) {
+    ys = cons(xs->head, ys);
+    xs = xs->tail;
+  }
+  return ys;
+}
+
+int compare(struct cons *xs, struct cons *ys) {
+  return (!xs && !ys) || (xs && ys && xs->head == ys->head && compare(xs->tail, ys->tail));
 }
 ```
 
@@ -638,92 +660,158 @@ func empty() List {
 ## C++
 
 ```cpp
-#include <experimental/optional>
+#include <vector>
+#include <numeric>
 
 template <typename T>
-class List {
+class Cons;
+
+template<class T>
+using List = std::shared_ptr<Cons<T>>;
+
+template <typename T>
+class Cons {
+  T car;
+  List<T> cdr;
 public:
-  virtual std::experimental::optional<T> operator[](int n) = 0;
-  virtual int size() = 0;
+  Cons(T head, List<T> tail) : car(head), cdr(tail) {}
+  T head() { return car; }
+  List<T> tail() { return cdr; }
 };
 
 template <typename T>
-class Cons : public List<T> {
-  T head;
-  List<T> *tail;
-public:
-  Cons(T h, List<T> *t) {
-    head = h;
-    tail = t;
-  }
-  int size() {
-    return 1 + tail->size();
-  }
-  std::experimental::optional<T> operator[](int n) {
-    if (n == 0)
-      return head;
-    else
-      return (*tail)[n - 1];
-  }
-};
+List<T> cons(T head, List<T> tail) {
+  return std::make_shared<Cons<T>>(head, tail);
+}
 
 template <typename T>
-class Nil : public List<T> {
-public:
-  Nil() {}
-  int size() {
+List<T> create(std::vector<T> values) {
+  return std::accumulate(values.rbegin(), values.rend(), (List<T>) nullptr, [](List<T> acc, T value) { return cons(value, acc); });
+}
+
+template <typename T>
+int size(List<T> list) {
+  if (list)
+    return 1 + size(list->tail());
+  else
     return 0;
+}
+
+template <typename T>
+T nth(List<T> list, int n, T value) {
+  if (list)
+    if (n == 0)
+	return list->head();
+    else
+	return nth(list->tail(), n - 1, value);
+  else
+    return value;
+}
+
+template <typename T>
+List<T> append(List<T> xs, List<T> ys) {
+  if (xs)
+    return cons(xs->head(), append(xs->tail(), ys));
+  else
+    return ys;
+}
+
+template <typename T>
+List<T> reverse(List<T> list) {
+  List<T> ys;
+  List<T> xs = list;
+  while (xs) {
+    ys = cons(xs->head(), ys);
+    xs = xs->tail();
   }
-  std::experimental::optional<T> operator[](int n) {
-    return std::experimental::nullopt;
-  }
-};
+  return ys;
+}
+
+template <typename T>
+bool operator==(List<T> xs, List<T> ys) {
+  return (!xs && !ys) || (xs && ys && xs->head() == ys->head() && xs->tail() == ys->tail());
+}
 ```
 
 ## Java
 
 ```java
 import java.util.Optional;
+import java.util.function.BiFunction;
 
 interface List<T> {
 
-    public Optional<T> get(int n);
+    public List<T> append(List<T> list);
 
-    public int size();
+    public Optional<T> get(int n);
+    
+    public <R> R foldLeft(R value, BiFunction<R, T, R> f);
+
+    public default int size() {
+	return this.<Integer>foldLeft(0, (n, value) -> n + 1);
+    }
+
+    public default List<T> reverse() {
+	return foldLeft((List<T>) new Nil<T>(), (tail, head) -> new Cons<T>(head, tail));
+    }
+
+    @SafeVarargs
+    public static <T> List<T> create(T... values) {
+	List<T> list = new Nil<T>();
+	for (int i = values.length - 1; i >= 0; i--)
+	    list = new Cons<T>(values[i], list);
+	return list;
+    }
 
 }
 
-class Cons<T> implements List<T> {
+final class Cons<T> implements List<T> {
 
     private T head;
     private List<T> tail;
 
     public Cons(T head, List<T> tail) {
-        this.head = head;
-        this.tail = tail;
+	this.head = head;
+	this.tail = tail;
     }
 
     public Optional<T> get(int n) {
-        if (n == 0)
-            return Optional.of(head);
-        else
-            return tail.get(n - 1);
+	if (n == 0)
+	    return Optional.of(head);
+	else
+	    return tail.get(n - 1);
     }
 
-    public int size() {
-        return 1 + tail.size();
+    public <R> R foldLeft(R value, BiFunction<R, T, R> f) {
+	return tail.foldLeft(f.apply(value, head), f);
+    }
+
+    public List<T> append(List<T> list) {
+	return new Cons<T>(head, tail.append(list));
+    }
+
+    public boolean equals(Object other) {
+	return other instanceof Cons && ((Cons) other).head.equals(head) && ((Cons) other).tail.equals(tail);
     }
 
 }
 
-class Nil<T> implements List<T> {
+final class Nil<T> implements List<T> {
 
     public Optional<T> get(int n) {
-        return Optional.empty();
+	return Optional.empty();
     }
 
-    public int size() {
-        return 0;
+    public List<T> append(List<T> list) {
+	return list;
+    }
+
+    public boolean equals(Object other) {
+	return other instanceof Nil;
+    }
+
+    public <R> R foldLeft(R value, BiFunction<R, T, R> f) {
+	return value;
     }
 
 }
@@ -732,38 +820,74 @@ class Nil<T> implements List<T> {
 ## C&#35;
 
 ```csharp
-interface List<T>
+abstract class List<T>
 {
 
-    T Get(int n);
+    public abstract T Get(int n);
 
-    int Size();
+    public abstract List<T> Append(List<T> list);
+
+    public abstract R FoldLeft<R>(R r, System.Func<R, T, R> f);
+
+    public int Size()
+    {
+	return FoldLeft(0, (n, value) => n + 1);
+    }
+
+    public List<T> Reverse()
+    {
+	return FoldLeft((List<T>) new Nil<T>(), (tail, head) => new Cons<T>(head, tail));
+    }
+
+    public static List<T> Create(params T[] values)
+    {
+	List<T> list = new Nil<T>();
+	for (int i = values.Length - 1; i >= 0; i--)
+	    list = new Cons<T>(values[i], list);
+	return list;
+    }
 
 }
 
 class Cons<T> : List<T>
 {
 
-    private T head;
-    private List<T> tail;
+    public T Head { get; }
+    public List<T> Tail { get; }
 
     public Cons(T head, List<T> tail)
     {
-        this.head = head;
-        this.tail = tail;
+        Head = head;
+        Tail = tail;
     }
 
-    public T Get(int n)
+    public override T Get(int n)
     {
         if (n == 0)
-            return head;
+            return Head;
         else
-            return tail.Get(n - 1);
+            return Tail.Get(n - 1);
     }
 
-    public int Size()
+    public override List<T> Append(List<T> list)
     {
-        return 1 + tail.Size();
+	return new Cons<T>(Head, Tail.Append(list));
+    }
+
+    public override R FoldLeft<R>(R r, System.Func<R, T, R> f)
+    {
+	return Tail.FoldLeft(f(r, Head), f);
+    }    
+
+    public override bool Equals(System.Object obj)
+    {
+	Cons<T> cons = obj as Cons<T>;
+	return cons != null && cons.Head.Equals(Head) && cons.Tail.Equals(Tail);
+    }
+
+    public override int GetHashCode()
+    {
+	return Head.GetHashCode() ^ Tail.GetHashCode();
     }
 
 }
@@ -771,14 +895,29 @@ class Cons<T> : List<T>
 class Nil<T> : List<T>
 {
 
-    public T Get(int n)
+    public override T Get(int n)
     {
         return default(T);
     }
 
-    public int Size()
+    public override List<T> Append(List<T> list)
     {
-        return 0;
+	return list;
+    }
+
+    public override R FoldLeft<R>(R r, System.Func<R, T, R> f)
+    {
+	return r;
+    }
+
+    public override bool Equals(System.Object obj)
+    {
+	return obj is Nil<T>;
+    }
+
+    public override int GetHashCode()
+    {
+	return 0;
     }
 
 }
@@ -954,7 +1093,13 @@ class List
   end
 
   def [](n)
-    inject([nil, n]) { |acc, value| if acc[1] <= 0 then [acc[0] || value, acc[1] - 1] else [acc[0], acc[1] - 1] end }[0]
+    inject([nil, n]) { |acc, value|
+      if acc[1] <= 0
+        [acc[0] || value, acc[1] - 1]
+      else
+        [acc[0], acc[1] - 1]
+      end
+    }[0]
   end
 
   def self.create(*values)

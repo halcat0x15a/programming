@@ -1,4 +1,4 @@
-package programming
+package programming.codensity
 
 import scala.language.higherKinds
 

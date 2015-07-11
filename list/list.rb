@@ -7,7 +7,13 @@ class List
   end
 
   def [](n)
-    inject([nil, n]) { |acc, value| if acc[1] <= 0 then [acc[0] || value, acc[1] - 1] else [acc[0], acc[1] - 1] end }[0]
+    inject([nil, n]) { |acc, value|
+      if acc[1] <= 0
+        [acc[0] || value, acc[1] - 1]
+      else
+        [acc[0], acc[1] - 1]
+      end
+    }[0]
   end
 
   def self.create(*values)
