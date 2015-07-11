@@ -1,1 +1,10 @@
 *~
+*.exe
+*.hi
+*.class
+*.o
+*.out
+.lein-repl-history
+*.jad
+/target
+/project
