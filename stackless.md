@@ -1,11 +1,11 @@
 ---
 layout: default
-title: Stackless Scala
+title: スタックレスScala
 ---
 
 # スタックレスScala
 
-[Stackless Scala With Free Monads](http://days2012.scala-lang.org/sites/days2012/files/bjarnason_trampolines.pdf)を参考にTrampolineやそれを抽象化したFreeを紹介する記事です.
+[Stackless Scala With Free Monads](http://days2012.scala-lang.org/sites/days2012/files/bjarnason_trampolines.pdf)を参考にTrampolineやそれを抽象化したFreeを紹介します.
 
 ## Abstract
 
@@ -69,22 +69,21 @@ def foldl[A, B](as: List[A], b: B, f: (B, A) => B): B =
 
 ```scala
 def foldl[A, B](as: List[A], b: B, f: (B, A) => B): B = {
-  var z = b
-  var az = as
+  var b_ = b
+  var as_ = as
   while (true) {
-    az match {
-      case Nil => return z
-      case x :: xs => {
-        z = f(z, x)
-        az = xs
-      }
+    as_ match {
+      case Nil => return b_
+      case x :: xs =>
+        as_ = xs
+        b_ = f(b_, x)
     }
   }
-  z
+  b_
 }
 ```
 
-末尾呼び出しならなんでも最適化されるのでしょうか?
+どのような末尾呼び出しでも最適化されるのでしょうか?
 
 ```scala
 lazy val even: Int => Boolean = {
@@ -114,7 +113,7 @@ java.lang.StackOverflowError
         .
 ```
 
-しかし,相互再帰では最適化が行われません.
+相互再帰では最適化が行われません.
 
 これらの問題を解決するデータ構造が存在します.
 

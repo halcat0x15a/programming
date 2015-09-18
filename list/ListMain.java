@@ -1,20 +1,6 @@
 import java.util.Optional;
 import java.util.function.BiFunction;
 
-public class ListMain {
-
-    public static void main(String[] args) {
-	List<Integer> foo = List.create(0, 1, 2);
-	assert foo.size() == 3;
-	assert foo.get(1).equals(Optional.of(1));
-	assert foo.get(2).equals(Optional.of(2));
-	assert foo.get(3).equals(Optional.empty());
-	assert foo.append(foo).equals(List.create(0, 1, 2, 0, 1, 2));
-	assert foo.reverse().equals(List.create(2, 1, 0));
-    }
-
-}
-
 interface List<T> {
 
     public List<T> append(List<T> list);
@@ -88,6 +74,20 @@ final class Nil<T> implements List<T> {
 
     public <R> R foldLeft(R value, BiFunction<R, T, R> f) {
 	return value;
+    }
+
+}
+
+public class ListMain {
+
+    public static void main(String[] args) {
+	List<Integer> foo = List.create(0, 1, 2);
+	assert foo.size() == 3;
+	assert foo.get(1).equals(Optional.of(1));
+	assert foo.get(2).equals(Optional.of(2));
+	assert foo.get(3).equals(Optional.empty());
+	assert foo.append(foo).equals(List.create(0, 1, 2, 0, 1, 2));
+	assert foo.reverse().equals(List.create(2, 1, 0));
     }
 
 }
